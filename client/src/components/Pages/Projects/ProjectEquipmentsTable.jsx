@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
-
+import React, { useEffect, useState, useMemo } from "react";
 import {
   vwProjectMaterialsSummary,
   vwTotalProjectsMaterials,
 } from "@services/ViewsSummary.js";
 import { VerifyAuth } from "@services/AuthService.js";
+
+// --- Funções Auxiliares ---
 
 function TotalEquipmentMaterial(equipment) {
   if (!equipment?.components) return {};
@@ -29,6 +30,7 @@ function TotalEquipmentMaterial(equipment) {
 }
 
 function formatDateTime(dateStr) {
+  if (!dateStr) return "-";
   const date = new Date(dateStr);
   return date.toLocaleString("pt-BR", {
     dateStyle: "short",
@@ -109,6 +111,8 @@ function RenderTotals(totalProjectMaterials, projId) {
   });
 }
 
+// --- Componente Principal ---
+
 function ProjectEquipmentsTable({ project_id, times }) {
   const [currentProject, setCurrentProject] = useState(null);
   const [projectsSummary, setProjectsSummary] = useState([]);
@@ -137,8 +141,20 @@ function ProjectEquipmentsTable({ project_id, times }) {
     });
   }, [project_id, projectsSummary]);
 
-  // Debug
-  useEffect(() => console.log(currentProject), [currentProject]);
+  // Cálculo do Valor Total do Projeto (Soma de todos os materiais)
+  const totalProjectValue = useMemo(() => {
+    if (!currentProject?.equipments) return 0;
+
+    return currentProject.equipments.reduce((accEquip, equip) => {
+      const equipTotal = equip.components?.reduce((accComp, comp) => {
+        const compTotal = comp.materials?.reduce((accMat, mat) => {
+          return accMat + Number(mat.total_value || 0);
+        }, 0) || 0;
+        return accComp + compTotal;
+      }, 0) || 0;
+      return accEquip + equipTotal;
+    }, 0);
+  }, [currentProject]);
 
   return (
     <table className="w-full project-equipments text-center">
@@ -165,8 +181,7 @@ function ProjectEquipmentsTable({ project_id, times }) {
         {currentProject?.equipments?.map((equip) => {
           const equip_totals = TotalEquipmentMaterial(equip);
           const total_value = sumEquipmentValue(equip_totals);
-          console.log(total_value)
-          const time = times.equipments[equip.equipment_id];
+          const time = times.equipments[equip.equipment_id] || {};
           const expanded = isExpanded(rowsExpands, equip.equipment_id);
 
           return (
@@ -190,6 +205,7 @@ function ProjectEquipmentsTable({ project_id, times }) {
                           : "src/imgs/add-square.png"
                       }
                       className="w-5 h-5"
+                      alt="Toggle"
                     />
                   </button>
                 </th>
@@ -214,6 +230,8 @@ function ProjectEquipmentsTable({ project_id, times }) {
             </React.Fragment>
           );
         })}
+        
+        {/* --- LINHA DE TOTAIS --- */}
         <tr className="text-left bg-[#DBEBFF]">
           <th className="first:rounded-bl-lg" colSpan={2}>
             Totais
@@ -221,20 +239,34 @@ function ProjectEquipmentsTable({ project_id, times }) {
           <th>
             {currentProject &&
               formatDateTime(
-                times.projects[currentProject?.project_id].start_date
+                times.projects[currentProject?.project_id]?.start_date
               )}
           </th>
           <th>
             {currentProject &&
               formatDateTime(
-                times.projects[currentProject?.project_id].end_date
+                times.projects[currentProject?.project_id]?.end_date
               )}
           </th>
           <th>Status</th>
+          
+          {/* Totais de Quantidade de Material */}
           {RenderTotals(totalProjectMaterials, currentProject?.project_id)}
 
-          <th>Valor</th>
-          <th className="last:rounded-br-lg">Horas</th>
+          {/* Valor Total Monetário */}
+          <th>
+            {totalProjectValue.toLocaleString("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            })}
+          </th>
+
+          {/* Valor Total de Horas */}
+          <th className="last:rounded-br-lg">
+            {currentProject && times.projects[currentProject.project_id]?.total_hours 
+              ? times.projects[currentProject.project_id].total_hours 
+              : 0}
+          </th>
         </tr>
       </tbody>
     </table>

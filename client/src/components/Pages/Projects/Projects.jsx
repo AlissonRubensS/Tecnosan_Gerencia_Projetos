@@ -138,10 +138,10 @@ function Projects() {
               </div>
 
               {/* Tabela */}
-              <ProjectEquipmentsTable
+              {currentProject && <ProjectEquipmentsTable
                 project_id={currentProject?.id}
                 times={times ?? {}}
-              />
+              />}
             </main>
 
             {/* Footer */}
