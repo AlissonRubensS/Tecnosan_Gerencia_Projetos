@@ -113,11 +113,12 @@ function RenderTotals(totalProjectMaterials, projId) {
 
 // --- Componente Principal ---
 
-function ProjectEquipmentsTable({ project_id, times }) {
+function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
   const [currentProject, setCurrentProject] = useState(null);
   const [projectsSummary, setProjectsSummary] = useState([]);
   const [rowsExpands, setRowsExpand] = useState([]);
   const [totalProjectMaterials, setTotalProjectMaterials] = useState([]);
+  const [equipmentsFilter, setEquipmentsFilter] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -141,17 +142,33 @@ function ProjectEquipmentsTable({ project_id, times }) {
     });
   }, [project_id, projectsSummary]);
 
+  useEffect(() => {
+    if (!currentProject?.equipments) {
+      return;
+    } else if (searchTerm == "") {
+      setEquipmentsFilter(currentProject.equipments);
+    } else {
+      setEquipmentsFilter(
+        currentProject?.equipments?.filter((equip) =>
+          equip.equipment_name.includes(searchTerm)
+        )
+      );
+    }
+  }, [searchTerm, currentProject]);
+
   // Cálculo do Valor Total do Projeto (Soma de todos os materiais)
   const totalProjectValue = useMemo(() => {
     if (!currentProject?.equipments) return 0;
 
     return currentProject.equipments.reduce((accEquip, equip) => {
-      const equipTotal = equip.components?.reduce((accComp, comp) => {
-        const compTotal = comp.materials?.reduce((accMat, mat) => {
-          return accMat + Number(mat.total_value || 0);
+      const equipTotal =
+        equip.components?.reduce((accComp, comp) => {
+          const compTotal =
+            comp.materials?.reduce((accMat, mat) => {
+              return accMat + Number(mat.total_value || 0);
+            }, 0) || 0;
+          return accComp + compTotal;
         }, 0) || 0;
-        return accComp + compTotal;
-      }, 0) || 0;
       return accEquip + equipTotal;
     }, 0);
   }, [currentProject]);
@@ -178,7 +195,7 @@ function ProjectEquipmentsTable({ project_id, times }) {
         </tr>
       </thead>
       <tbody>
-        {currentProject?.equipments?.map((equip) => {
+        {equipmentsFilter?.map((equip) => {
           const equip_totals = TotalEquipmentMaterial(equip);
           const total_value = sumEquipmentValue(equip_totals);
           const time = times.equipments[equip.equipment_id] || {};
@@ -230,7 +247,7 @@ function ProjectEquipmentsTable({ project_id, times }) {
             </React.Fragment>
           );
         })}
-        
+
         {/* --- LINHA DE TOTAIS --- */}
         <tr className="text-left bg-[#DBEBFF]">
           <th className="first:rounded-bl-lg" colSpan={2}>
@@ -249,7 +266,7 @@ function ProjectEquipmentsTable({ project_id, times }) {
               )}
           </th>
           <th>Status</th>
-          
+
           {/* Totais de Quantidade de Material */}
           {RenderTotals(totalProjectMaterials, currentProject?.project_id)}
 
@@ -263,8 +280,9 @@ function ProjectEquipmentsTable({ project_id, times }) {
 
           {/* Valor Total de Horas */}
           <th className="last:rounded-br-lg">
-            {currentProject && times.projects[currentProject.project_id]?.total_hours 
-              ? times.projects[currentProject.project_id].total_hours 
+            {currentProject &&
+            times.projects[currentProject.project_id]?.total_hours
+              ? times.projects[currentProject.project_id].total_hours
               : 0}
           </th>
         </tr>
