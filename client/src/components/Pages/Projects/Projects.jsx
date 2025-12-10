@@ -1,13 +1,21 @@
+// Imports de componentes gerais
 import NavBar from "../../Ui/NavBar";
 import SidebarList from "../../Ui/SlideBarList";
-import AddBudgetModal from "../Budgets/AddBudgetModal";
-import ProjectEquipmentsTable from "./ProjectEquipmentsTable";
-import { FaSearch } from "react-icons/fa";
 
+// Import de componentes de especifícos a outro componente
+import AddBudgetModal from "../Budgets/AddBudgetModal";
+
+// Import de componentes especificos a esta página
+import ProjectsHeader from "./ProjectsHeader";
+import ProjectsMain from "./ProjectsMain";
+import ProjectsFooter from "./ProjectsFooter";
+
+// Import de funções
 import { selectedProjectContext } from "@content/SeletedProject.jsx";
 import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router";
 
+// Import de Services
 import { listProjects } from "@services/ProjectService";
 import { getTimesCascade } from "@services/ViewsService";
 import { VerifyAuth } from "@services/AuthService";
@@ -19,7 +27,6 @@ function Projects() {
     selectedProjectContext
   );
   const [times, setTimes] = useState({});
-  const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();
 
@@ -81,101 +88,13 @@ function Projects() {
           {/* Conteúdo Principal */}
           <div className="flex flex-col flex-1 gap-4">
             {/* Header do Projeto */}
-            <header className="card p-4">
-              <div className="flex gap-8 w-full">
-                <h1 className="text-xl font-bold">
-                  {currentProject?.name || "Gastos Totais"}
-                </h1>
-                <p className="text-xl font-bold text-blue-500">
-                  R$ 1.000.000,00
-                </p>
-              </div>
-
-              <div className="flex gap-8 mt-2">
-                <p>Resina: 250 Kg</p>
-                <p>Roving: 300 Kg</p>
-                <p>Tecido: 50 Kg</p>
-                <p>CMD Tec: 20 cmd</p>
-                <p>
-                  Total de Horas:{" "}
-                  {times?.projects?.[currentProject?.id]?.total_hours ?? 0}{" "}
-                  Horas
-                </p>
-                <p>
-                  Total de Homens:{" "}
-                  {times?.projects?.[currentProject?.id]?.qtd_employees ?? 0} F
-                </p>
-                <p>
-                  Total Horas-Homem:{" "}
-                  {(times?.projects?.[currentProject?.id]?.qtd_employees ?? 0) *
-                    (times?.projects?.[currentProject?.id]?.total_hours ??
-                      0)}{" "}
-                  F HH
-                </p>
-              </div>
-            </header>
+            <ProjectsHeader currentProject={currentProject} times={times} />
 
             {/* MAIN expansivo */}
-            <main className="card m-0 p-4 gap-4 overflow-y-auto">
-              {/* Barra de Pesquisa */}
-              <div className="flex flex-row justify-between w-full">
-                <form
-                  className="flex flex-row justify-between space-x-4 p-2 rounded-xl bg-white-gray h-fit"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                  }}
-                >
-                  <button>
-                    <FaSearch />
-                  </button>
-                  <input
-                    type="text"
-                    placeholder="Pesquisar..."
-                    className="bg-transparent"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      e.preventDefault();
-                      setSearchTerm(e.target.value);
-                    }}
-                  />
-                </form>
-
-                {/* Botões de ações */}
-                <div className="flex flex-row justify-center gap-4 h-fit">
-                  <button className="bnt-add">+ Novo Equipamento</button>
-                  <button className="bnt">Ir para Cronograma</button>
-                  <button className="bnt">Ir para Acessórios</button>
-                </div>
-              </div>
-
-              {/* Tabela */}
-              {currentProject && (
-                <ProjectEquipmentsTable
-                  project_id={currentProject?.id}
-                  searchTerm={searchTerm}
-                  times={times ?? {}}
-                />
-              )}
-            </main>
+            <ProjectsMain currentProject={currentProject} times={times} />
 
             {/* Footer */}
-            <div className="flex justify-center">
-              <div className="w-1/4 h-fit bg-white flex flex-row rounded shadow p-2 justify-around">
-                <button className="flex items-center gap-2 bnt">
-                  <img src="src/imgs/archive.png" className="h-5 w-5" />
-                  <span className="font-medium text-base">
-                    Arquivar Projeto
-                  </span>
-                </button>
-
-                <button className="flex items-center gap-2 bnt-add">
-                  <img src="src/imgs/tick-double.png" className="h-5 w-5" />
-                  <span className="font-medium text-base">
-                    Concluir Projeto
-                  </span>
-                </button>
-              </div>
-            </div>
+            <ProjectsFooter />
           </div>
         </div>
       </div>
