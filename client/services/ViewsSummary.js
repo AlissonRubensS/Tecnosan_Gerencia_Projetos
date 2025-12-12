@@ -3,9 +3,7 @@ const API_URL = "http://localhost:3001/vwSummary";
 
 export const vwProjectMaterialsSummary = async (user_id) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/projects/${user_id}`
-    );
+    const response = await axios.get(`${API_URL}/projects/${user_id}`);
     return response.data;
   } catch (error) {
     console.error(
@@ -31,9 +29,7 @@ export const vwEquipmentMaterialsSummary = async () => {
 
 export const vwComponentRecipeMaterials = async () => {
   try {
-    const response = await axios.get(
-      API_URL + "/components"
-    );
+    const response = await axios.get(API_URL + "/components");
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error(
@@ -46,15 +42,42 @@ export const vwComponentRecipeMaterials = async () => {
 
 export const vwTotalProjectsMaterials = async (user_id) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/total/projects/${user_id}`
-    );
+    const response = await axios.get(`${API_URL}/total/projects/${user_id}`);
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
-    console.error(
-      "Erro no Service",
-      error
+    console.error("Erro no Service", error);
+    return [];
+  }
+};
+
+export const vwSummaryStatus = async () => {
+  try {
+    const responseComponentStatus = await axios.get(
+      "http://localhost:3001/components/status"
     );
+    const responseEquipmentStatus = await axios.get(
+      `${API_URL}/status/equipments/`
+    );
+    const responseProjectsStatus = await axios.get(
+      `${API_URL}/status/projects/`
+    );
+
+    if (
+      !responseComponentStatus ||
+      !responseEquipmentStatus ||
+      !responseProjectsStatus
+    ) {
+      console.error("Dados não foram devidamente requisitado");
+      return undefined;
+    }
+
+    return {
+      components: responseComponentStatus.data,
+      equipments: responseEquipmentStatus.data,
+      projects: responseProjectsStatus.data,
+    };
+  } catch (error) {
+    console.error("Erro no service", error);
     return [];
   }
 };

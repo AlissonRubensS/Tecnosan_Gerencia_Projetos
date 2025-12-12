@@ -1,16 +1,23 @@
 import { Router } from "express";
 import {
-    vwProjectMaterialsSummary,
-    vwEquipmentMaterialsSummary,
-    vwComponentMaterialsSummary,
-    vwTotalsMaterialsProjecst,
-} from "../controllers/viewsSummary.controller.js"
+  vwProjectMaterialsSummary,
+  vwEquipmentMaterialsSummary,
+  vwComponentMaterialsSummary,
+  vwTotalsMaterialsProjecst,
+  vwStatusEquipments,
+  vwStatusProjects,
+} from "../controllers/viewsSummary.controller.js";
 
-const router = Router()
+const router = Router();
 
-router.get("/projects/:user_id", vwProjectMaterialsSummary)
-router.get("/equipments", vwEquipmentMaterialsSummary)
-router.get("/components", vwComponentMaterialsSummary)
-router.get("/total/projects/:user_id", vwTotalsMaterialsProjecst)
+// Views de mmateriais
+router.get("/projects/:user_id", vwProjectMaterialsSummary);
+router.get("/equipments", vwEquipmentMaterialsSummary);
+router.get("/components", vwComponentMaterialsSummary);
+router.get("/total/projects/:user_id", vwTotalsMaterialsProjecst);
+
+// View de status
+router.get("/status/equipments/", vwStatusEquipments);
+router.get("/status/projects/", vwStatusProjects);
 
 export default router;

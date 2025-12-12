@@ -157,10 +157,38 @@ export const vwTotalsMaterialsProjecst = async (req, res) => {
         `,
       [user_id]
     );
-    
-    res.status(200).json(response.rows);
 
+    res.status(200).json(response.rows);
   } catch (error) {
-    res.status(500).json({ error: "Erro na requisição " });
+    res.status(500).json({ error: "Erro na requisição" });
+  }
+};
+
+export const vwStatusEquipments = async (req, res) => {
+  try {
+    const response = await pool.query("SELECT * FROM vw_status_equipments;");
+
+    if (response.rowCount == 0) {
+      return res.status(404).json({ error: "Nenhum equipamento encontrado" });
+    }
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    res.status(500).json({ error: "Erro na requisição" });
+  }
+};
+
+
+export const vwStatusProjects = async (req, res) => {
+  try {
+    const response = await pool.query("SELECT * FROM vw_status_projects;");
+
+    if (response.rowCount == 0) {
+      return res.status(404).json({ error: "Nenhum equipamento encontrado" });
+    }
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    res.status(500).json({ error: "Erro na requisição" });
   }
 };

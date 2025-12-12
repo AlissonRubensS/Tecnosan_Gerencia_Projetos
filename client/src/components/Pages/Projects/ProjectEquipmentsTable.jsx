@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import {
   vwProjectMaterialsSummary,
   vwTotalProjectsMaterials,
+  vwSummaryStatus,
 } from "@services/ViewsSummary.js";
 import { VerifyAuth } from "@services/AuthService.js";
 
@@ -62,15 +63,37 @@ function renderMaterialColumns(
   ));
 }
 
-function renderComponentRow(components, compTimes) {
+function statusLabel(status) {
+  switch (status) {
+    case "Pending":
+      return "Pendente";
+    case "Completed":
+      return "Concluído";
+    case "Running":
+      return "Em Andamento";
+    case "Delayed":
+      return "Atrasado";
+    case "Failed":
+      return "Não Concluído";
+    default:
+      return "Sem Status";
+  }
+}
+
+function renderComponentRow(components, compTimes, statusComponents) {
   return components.map((comp) => {
     const time = compTimes[comp?.component_id] || {};
+    const status = statusComponents?.map((c) => {
+      if (c.component_id == comp.component_id) {
+        return c.status;
+      }
+    });
     return (
       <tr key={comp.component_id}>
         <td colSpan={2}>{comp.component_name}</td>
         <td>{formatDateTime(time.start_date)}</td>
         <td>{formatDateTime(time.end_date)}</td>
-        <td>Status</td>
+        <td>{statusLabel(status)}</td>
         <td>{comp.materials[1]?.total_material_consumed ?? 0}</td>
         <td>{comp.materials[2]?.total_material_consumed ?? 0}</td>
         <td>{comp.materials[3]?.total_material_consumed ?? 0}</td>
@@ -119,6 +142,7 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
   const [rowsExpands, setRowsExpand] = useState([]);
   const [totalProjectMaterials, setTotalProjectMaterials] = useState([]);
   const [equipmentsFilter, setEquipmentsFilter] = useState([]);
+  const [summaryStatus, setSummaryStatus] = useState({});
 
   useEffect(() => {
     const loadData = async () => {
@@ -129,6 +153,9 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
 
       const total_data = await vwTotalProjectsMaterials(user.user_id);
       if (Array.isArray(total_data)) setTotalProjectMaterials(total_data);
+
+      const status_data = await vwSummaryStatus();
+      setSummaryStatus(status_data);
     };
     loadData();
   }, []);
@@ -155,6 +182,10 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
       );
     }
   }, [searchTerm, currentProject]);
+
+  useEffect(() => {
+    if (summaryStatus) console.log(summaryStatus);
+  }, [summaryStatus]);
 
   // Cálculo do Valor Total do Projeto (Soma de todos os materiais)
   const totalProjectValue = useMemo(() => {
@@ -231,7 +262,13 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
                 <th>{equip.equipment_name}</th>
                 <th>{formatDateTime(time.start_date)}</th>
                 <th>{formatDateTime(time.end_date)}</th>
-                <th>Status</th>
+                <th>
+                  {summaryStatus?.equipments?.map((e) => {
+                    if (e.equipment_id == equip.equipment_id) {
+                      return statusLabel(e.status);
+                    }
+                  })}
+                </th>
 
                 {/* Colunas de materiais (dinâmico) */}
                 {renderMaterialColumns(equip_totals)}
@@ -243,7 +280,11 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
                 <th>{time.total_hours}</th>
               </tr>
               {expanded &&
-                renderComponentRow(equip.components, times.components)}
+                renderComponentRow(
+                  equip.components,
+                  times.components,
+                  summaryStatus.components
+                )}
             </React.Fragment>
           );
         })}
@@ -265,8 +306,13 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
                 times.projects[currentProject?.project_id]?.end_date
               )}
           </th>
-          <th>Status</th>
-
+          <th>
+            {summaryStatus?.projects?.map((p) => {
+              if (p.project_id == currentProject?.project_id) {
+                return statusLabel(p.status);
+              }
+            })}
+          </th>
           {/* Totais de Quantidade de Material */}
           {RenderTotals(totalProjectMaterials, currentProject?.project_id)}
 
