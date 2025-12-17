@@ -1,8 +1,5 @@
 import { pool } from "../config/db.js";
 
-/**
- * Create a new project
- */
 export const createProject = async (req, res) => {
   const client = await pool.connect();
 
@@ -71,9 +68,6 @@ export const createProject = async (req, res) => {
   }
 };
 
-/**
- * List projects for a specific user
- */
 export const listProject = async (req, res) => {
   try {
     const { user_id } = req.params;
@@ -99,9 +93,6 @@ export const listProject = async (req, res) => {
   }
 };
 
-/**
- * Edit a project
- */
 export const editProject = async (req, res) => {
   try {
     const {
@@ -147,9 +138,6 @@ export const editProject = async (req, res) => {
   }
 };
 
-/**
- * Delete a project
- */
 export const deleteProject = async (req, res) => {
   try {
     const { project_id } = req.body;

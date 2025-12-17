@@ -45,7 +45,7 @@ function Projects() {
 
   return (
     <>
-      <div className="flex flex-col w-screen min-h-screen overflow-x-hidden gap-6">
+      <div className="flex flex-col max-w-screen min-h-screen overflow-x-hidden gap-6">
         <NavBar select_index={1} />
 
         {/* Header Principal */}
@@ -88,10 +88,10 @@ function Projects() {
           {/* Conteúdo Principal */}
           <div className="flex flex-col flex-1 gap-4">
             {/* Header do Projeto */}
-            <ProjectsHeader currentProject={currentProject} times={times} />
+            <ProjectsHeader times={times} />
 
             {/* MAIN expansivo */}
-            <ProjectsMain currentProject={currentProject} times={times} />
+            <ProjectsMain times={times}/>
 
             {/* Footer */}
             <ProjectsFooter />

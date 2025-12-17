@@ -106,12 +106,11 @@ export const vwMaterialDetailsEquipmentsRecipes = async (req, res) => {
 
 export const getTimesCascade = async (req, res) => {
   try {
-    // Consultas às três views
-    const projectQuery = await pool.query(`SELECT * FROM vw_project_times;`);
-    const equipmentQuery = await pool.query(`SELECT * FROM vw_equipment_times;`);
+    // Consultas às novas views criadas
+    const projectQuery = await pool.query(`SELECT * FROM vw_project_hours;`);
+    const equipmentQuery = await pool.query(`SELECT * FROM vw_equipment_hours;`);
     const componentQuery = await pool.query(`SELECT * FROM vw_component_hours;`);
 
-    // Transformar em objeto cascata
     const result = {
       projects: {},
       equipments: {},
@@ -119,13 +118,15 @@ export const getTimesCascade = async (req, res) => {
     };
 
     // ----- PROJECTS -----
+    // Mapeamos 'actual_start' para 'start_date' para manter compatibilidade com seu Front-end
     projectQuery.rows.forEach(row => {
       result.projects[row.project_id] = {
         project_id: row.project_id,
-        start_date: row.start_date,
-        end_date: row.end_date,
-        total_hours: Number(row.total_hours),
-        qtd_employees: Number(row.qtd_employees)
+        // Usamos o realizado (actual), se não houver, o planejado (planned)
+        start_date: row.actual_start || row.planned_start,
+        end_date: row.actual_end || row.planned_deadline,
+        total_hours: parseFloat(row.total_hours || 0),
+        qtd_employees: parseInt(row.qtd_employees || 0)
       };
     });
 
@@ -133,29 +134,29 @@ export const getTimesCascade = async (req, res) => {
     equipmentQuery.rows.forEach(row => {
       result.equipments[row.equipment_id] = {
         equipment_id: row.equipment_id,
-        start_date: row.start_date,
-        end_date: row.end_date,
-        total_hours: Number(row.total_hours),
-        qtd_employees: Number(row.qtd_employees)
+        start_date: row.actual_start || row.planned_start,
+        end_date: row.actual_end || row.planned_deadline,
+        total_hours: parseFloat(row.total_hours || 0),
+        qtd_employees: parseInt(row.qtd_employees || 0)
       };
     });
 
     // ----- COMPONENTS -----
+    // Na vw_component_hours, as colunas são start_date (tabela) e end_date (MAX da execução)
     componentQuery.rows.forEach(row => {
       result.components[row.component_id] = {
         component_id: row.component_id,
-        start_date: row.start_date,
-        end_date: row.end_date,
-        total_hours: Number(row.total_hours),
-        qtd_employees: Number(row.qtd_employees)
+        start_date: row.start_date, // Data de início do componente
+        end_date: row.end_date || row.deadline, // Fim real ou prazo
+        total_hours: parseFloat(row.total_hours || 0),
+        qtd_employees: parseInt(row.qtd_employees || 0)
       };
     });
 
-    // Retornar só JSON
     res.json(result);
 
   } catch (error) {
     console.error("Erro ao buscar dados em cascata:", error);
-    res.status(500).json({ error: "Erro ao buscar dados." });
+    res.status(500).json({ error: "Erro interno ao processar cronograma." });
   }
 };

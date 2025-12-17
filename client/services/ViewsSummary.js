@@ -14,6 +14,34 @@ export const vwProjectMaterialsSummary = async (user_id) => {
   }
 };
 
+export const totalMaterialsProjects = async (user_id) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/projects-materials/${user_id}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Erro para contar quantidade de material consumido por projeto",
+      error
+    );
+    return [];
+  }
+};
+
+export const totalValuesProjects = async (user_id) => {
+  try {
+    const response = await axios.get(`${API_URL}/projects-values/${user_id}`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Erro para contar quantidade de material consumido por projeto",
+      error
+    );
+    return [];
+  }
+};
+
 export const vwEquipmentMaterialsSummary = async () => {
   try {
     const response = await axios.get(API_URL + "/department");

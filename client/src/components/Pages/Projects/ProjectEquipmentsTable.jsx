@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useContext } from "react";
 import {
   vwProjectMaterialsSummary,
   vwTotalProjectsMaterials,
@@ -6,11 +6,11 @@ import {
 } from "@services/ViewsSummary.js";
 import { VerifyAuth } from "@services/AuthService.js";
 
-// --- Funções Auxiliares ---
+import { selectedProjectContext } from "@content/SeletedProject.jsx";
 
+// --- Funções Auxiliares ---
 function TotalEquipmentMaterial(equipment) {
   if (!equipment?.components) return {};
-
   const totals = {};
   equipment.components.forEach((comp) => {
     comp.materials.forEach((mat) => {
@@ -41,13 +41,8 @@ function formatDateTime(dateStr) {
 
 function sumEquipmentValue(equip_totals) {
   return Object.values(equip_totals)
-    .reduce((sum, mat) => {
-      return sum + Number(mat.value);
-    }, 0)
-    .toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
+    .reduce((sum, mat) => sum + Number(mat.value), 0)
+    .toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function isExpanded(rowsExpands, id) {
@@ -83,24 +78,19 @@ function statusLabel(status) {
 function renderComponentRow(components, compTimes, statusComponents) {
   return components.map((comp) => {
     const time = compTimes[comp?.component_id] || {};
-    const status = statusComponents?.map((c) => {
-      if (c.component_id == comp.component_id) {
-        return c.status;
-      }
-    });
+    const status = statusComponents?.find(
+      (c) => c.component_id == comp.component_id
+    )?.status;
+
     return (
       <tr key={comp.component_id}>
         <td colSpan={2}>{comp.component_name}</td>
         <td>{formatDateTime(time.start_date)}</td>
         <td>{formatDateTime(time.end_date)}</td>
         <td>{statusLabel(status)}</td>
-        <td>{comp.materials[1]?.total_material_consumed ?? 0}</td>
-        <td>{comp.materials[2]?.total_material_consumed ?? 0}</td>
-        <td>{comp.materials[3]?.total_material_consumed ?? 0}</td>
-        <td>{comp.materials[4]?.total_material_consumed ?? 0}</td>
-        <td>{comp.materials[5]?.total_material_consumed ?? 0}</td>
-        <td>{comp.materials[6]?.total_material_consumed ?? 0}</td>
-        <td>{comp.materials[7]?.total_material_consumed ?? 0}</td>
+        {[1, 2, 3, 4, 5, 6, 7].map((id) => (
+          <td key={id}>{comp.materials[id]?.total_material_consumed ?? 0}</td>
+        ))}
         <td>
           {sumEquipmentValue(
             comp.materials.map((mat) => ({
@@ -124,10 +114,8 @@ function RenderTotals(totalProjectMaterials, projId) {
     const materialEncontrado = projectMaterials.find(
       (mat) => mat.material_id == idCol
     );
-
     return (
       <th key={idCol}>
-        {/* Se achou, mostra a qtd, senão mostra 0 */}
         {materialEncontrado ? materialEncontrado.total_quantity : 0}
       </th>
     );
@@ -136,58 +124,20 @@ function RenderTotals(totalProjectMaterials, projId) {
 
 // --- Componente Principal ---
 
-function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
-  const [currentProject, setCurrentProject] = useState(null);
+function ProjectEquipmentsTable({ times, searchTerm }) {
   const [projectsSummary, setProjectsSummary] = useState([]);
   const [rowsExpands, setRowsExpand] = useState([]);
   const [totalProjectMaterials, setTotalProjectMaterials] = useState([]);
   const [equipmentsFilter, setEquipmentsFilter] = useState([]);
   const [summaryStatus, setSummaryStatus] = useState({});
 
-  useEffect(() => {
-    const loadData = async () => {
-      const user = await VerifyAuth();
+  const { currentProject : project } = useContext(selectedProjectContext);
 
-      const summary_data = await vwProjectMaterialsSummary(user.user_id);
-      setProjectsSummary(summary_data);
+  const currentProject = useMemo(() => {
+    if (!project?.id) return null;
+    return projectsSummary.find((proj) => proj.project_id == project.id);
+  }, [projectsSummary, project?.id]);
 
-      const total_data = await vwTotalProjectsMaterials(user.user_id);
-      if (Array.isArray(total_data)) setTotalProjectMaterials(total_data);
-
-      const status_data = await vwSummaryStatus();
-      setSummaryStatus(status_data);
-    };
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    projectsSummary.forEach((proj) => {
-      if (proj.project_id === project_id) {
-        setCurrentProject(proj);
-        return;
-      }
-    });
-  }, [project_id, projectsSummary]);
-
-  useEffect(() => {
-    if (!currentProject?.equipments) {
-      return;
-    } else if (searchTerm == "") {
-      setEquipmentsFilter(currentProject.equipments);
-    } else {
-      setEquipmentsFilter(
-        currentProject?.equipments?.filter((equip) =>
-          equip.equipment_name.includes(searchTerm)
-        )
-      );
-    }
-  }, [searchTerm, currentProject]);
-
-  useEffect(() => {
-    if (summaryStatus) console.log(summaryStatus);
-  }, [summaryStatus]);
-
-  // Cálculo do Valor Total do Projeto (Soma de todos os materiais)
   const totalProjectValue = useMemo(() => {
     if (!currentProject?.equipments) return 0;
 
@@ -203,6 +153,36 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
       return accEquip + equipTotal;
     }, 0);
   }, [currentProject]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const user = await VerifyAuth();
+      const summary_data = await vwProjectMaterialsSummary(user.user_id);
+      setProjectsSummary(summary_data);
+      const total_data = await vwTotalProjectsMaterials(user.user_id);
+      if (Array.isArray(total_data)) setTotalProjectMaterials(total_data);
+      const status_data = await vwSummaryStatus();
+      setSummaryStatus(status_data);
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!currentProject?.equipments) {
+      setEquipmentsFilter([]);
+      return;
+    }
+
+    if (searchTerm == "") {
+      setEquipmentsFilter(currentProject.equipments);
+    } else {
+      setEquipmentsFilter(
+        currentProject.equipments.filter((equip) =>
+          equip.equipment_name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+  }, [currentProject, searchTerm]);
 
   return (
     <table className="w-full project-equipments text-center">
@@ -229,13 +209,12 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
         {equipmentsFilter?.map((equip) => {
           const equip_totals = TotalEquipmentMaterial(equip);
           const total_value = sumEquipmentValue(equip_totals);
-          const time = times.equipments[equip.equipment_id] || {};
+          const time = times?.equipments?.[equip.equipment_id] || {};
           const expanded = isExpanded(rowsExpands, equip.equipment_id);
 
           return (
             <React.Fragment key={equip.equipment_id}>
               <tr className="bg-white-gray" key={equip.equipment_id}>
-                {/* Botão expand/collapse */}
                 <th>
                   <button
                     onClick={() =>
@@ -258,31 +237,29 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
                   </button>
                 </th>
 
-                {/* Informações */}
                 <th>{equip.equipment_name}</th>
                 <th>{formatDateTime(time.start_date)}</th>
                 <th>{formatDateTime(time.end_date)}</th>
                 <th>
-                  {summaryStatus?.equipments?.map((e) => {
-                    if (e.equipment_id == equip.equipment_id) {
-                      return statusLabel(e.status);
-                    }
-                  })}
+                  {summaryStatus?.equipments?.find(
+                    (e) => e.equipment_id == equip.equipment_id
+                  )
+                    ? statusLabel(
+                        summaryStatus.equipments.find(
+                          (e) => e.equipment_id == equip.equipment_id
+                        ).status
+                      )
+                    : ""}
                 </th>
 
-                {/* Colunas de materiais (dinâmico) */}
                 {renderMaterialColumns(equip_totals)}
-
-                {/* Total R$ */}
                 <th>{total_value}</th>
-
-                {/* Horas */}
                 <th>{time.total_hours}</th>
               </tr>
               {expanded &&
                 renderComponentRow(
                   equip.components,
-                  times.components,
+                  times?.components || {},
                   summaryStatus.components
                 )}
             </React.Fragment>
@@ -296,27 +273,32 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
           </th>
           <th>
             {currentProject &&
+              times?.projects &&
               formatDateTime(
                 times.projects[currentProject?.project_id]?.start_date
               )}
           </th>
           <th>
             {currentProject &&
+              times?.projects &&
               formatDateTime(
                 times.projects[currentProject?.project_id]?.end_date
               )}
           </th>
           <th>
-            {summaryStatus?.projects?.map((p) => {
-              if (p.project_id == currentProject?.project_id) {
-                return statusLabel(p.status);
-              }
-            })}
+            {summaryStatus?.projects?.find(
+              (p) => p.project_id == currentProject?.project_id
+            )
+              ? statusLabel(
+                  summaryStatus.projects.find(
+                    (p) => p.project_id == currentProject?.project_id
+                  ).status
+                )
+              : ""}
           </th>
-          {/* Totais de Quantidade de Material */}
+
           {RenderTotals(totalProjectMaterials, currentProject?.project_id)}
 
-          {/* Valor Total Monetário */}
           <th>
             {totalProjectValue.toLocaleString("pt-BR", {
               style: "currency",
@@ -324,10 +306,9 @@ function ProjectEquipmentsTable({ project_id, times, searchTerm }) {
             })}
           </th>
 
-          {/* Valor Total de Horas */}
           <th className="last:rounded-br-lg">
             {currentProject &&
-            times.projects[currentProject.project_id]?.total_hours
+            times?.projects?.[currentProject.project_id]?.total_hours
               ? times.projects[currentProject.project_id].total_hours
               : 0}
           </th>

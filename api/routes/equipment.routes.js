@@ -5,6 +5,6 @@ import {
 
 const router = Router();
 
-router.get("/", getEquipment);
+router.get("/:project_id", getEquipment);
 
 export default router;

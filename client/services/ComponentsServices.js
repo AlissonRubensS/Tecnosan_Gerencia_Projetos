@@ -19,3 +19,14 @@ export const countStatusComponents = async (
     console.error("Erro ao contar status dos componentes", error);
   }
 };
+
+export const getComponents = async () => {
+  try {
+    const response = await axios.get(API_URL);
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+  } catch (error) {
+    console.error("Erro ao listar componentes", error);
+  }
+};

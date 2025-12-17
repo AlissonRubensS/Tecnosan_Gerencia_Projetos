@@ -92,6 +92,66 @@ export const vwProjectMaterialsSummary = async (req, res) => {
   }
 };
 
+export const totalValuesProjects = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    if (!user_id)
+      return res.status(404).json({ error: "Usuário não encontrado" });
+
+    const response = await pool.query(
+      `SELECT 
+          project_id, 
+          project_name, 
+          SUM(total_value) AS total_value
+        FROM 
+          vw_project_consumed_materials
+        WHERE 
+          user_id = $1
+        GROUP BY 
+          project_id, 
+          project_name;`,
+      [user_id]
+    );
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    res.status(500).json({ error: "Falha no back-end" });
+  }
+};
+
+export const totalMaterialsProjects = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    if (!user_id)
+      return res.status(404).json({ error: "Usuário não encontrado" });
+
+    const response = await pool.query(
+      `SELECT 
+          project_id,
+          material_id,
+          material_name,
+          SUM (total_material_consumed) AS total_value
+        FROM vw_project_consumed_materials
+        WHERE 
+          user_id = $1
+        GROUP BY
+          project_id,
+          material_id,
+          material_name
+        ORDER BY
+          project_id,
+          material_id;`,
+      [user_id]
+    );
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    res.status(500).json({ error: "Falha no back-end" });
+  }
+};
+
 export const vwEquipmentMaterialsSummary = async (req, res) => {
   try {
     const { user_id } = req.params;
@@ -177,7 +237,6 @@ export const vwStatusEquipments = async (req, res) => {
     res.status(500).json({ error: "Erro na requisição" });
   }
 };
-
 
 export const vwStatusProjects = async (req, res) => {
   try {
