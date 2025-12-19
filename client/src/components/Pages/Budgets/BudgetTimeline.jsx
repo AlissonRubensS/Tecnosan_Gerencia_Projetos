@@ -1,58 +1,61 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import StatusButton from "../../Ui/StatusButton";
-import { getEquipment } from "@services/EquipmentService";
-import { getComponents } from "@services/ComponentsServices";
-import { vwSummaryStatus } from "@services/ViewsSummary";
-import { selectedProjectContext } from "@content/SeletedProject.jsx";
+import { getEquipmentsTimelineByBudget } from "@services/ViewsSummary";
 
-// eslint-disable-next-line no-unused-vars
-export default function BudgetTimeline({ searchTerm, times }) {
-  const [equipments, setEquipments] = useState([]);
-  const [components, setComponents] = useState([]);
+export default function ProjectTimeline({
+  currentBudget,
+  searchTerm,
+  timelineTasks = [],
+  timelineEquipments = [],
+  timelineBudgets,
+}) {
   const [timelineDates, setTimelineDates] = useState([]);
-  const [status, setStatus] = useState([]);
-
-  const { currentProject } = useContext(selectedProjectContext);
-
+  const [equipmentsInBudgets, setEquipmentsInBudgets] = useState([]);
   useEffect(() => {
-    const loadData = async () => {
-      if (currentProject?.id) {
-        const equipment_data = await getEquipment(currentProject.id);
-        setEquipments(equipment_data || []);
-      }
-      const component_data = await getComponents();
-      setComponents(component_data || []);
-
-      const status_data = await vwSummaryStatus();
-      setStatus(status_data);
-    };
-
     const dateLoader = () => {
-      const finalDateRaw = currentProject?.end_date || currentProject?.deadline;
+      const rawStartDate = timelineBudgets?.project_start_at;
+      let startDate = rawStartDate ? new Date(rawStartDate) : new Date();
+      if (isNaN(startDate.getTime())) startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
 
-      if (currentProject?.start_date && finalDateRaw) {
-        const datesArray = [];
-        const startDate = new Date(currentProject.start_date);
-        const endDate = new Date(finalDateRaw);
+      const rawEndDate = timelineBudgets?.project_end_at;
+      let endDate = rawEndDate ? new Date(rawEndDate) : new Date();
 
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(0, 0, 0, 0);
-
-        let currentDate = new Date(startDate);
-        let safety = 0;
-
-        while (currentDate <= endDate && safety < 1000) {
-          datesArray.push(new Date(currentDate));
-          currentDate.setDate(currentDate.getDate() + 1);
-          safety++;
-        }
-        setTimelineDates(datesArray);
+      if (isNaN(endDate.getTime()) || endDate < startDate) {
+        endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 30);
+      } else {
+        endDate.setDate(endDate.getDate() + 30);
       }
+
+      endDate.setHours(0, 0, 0, 0);
+
+      const datesArray = [];
+      let currentDate = new Date(startDate);
+      let safety = 0;
+
+      while (currentDate <= endDate && safety < 1000) {
+        datesArray.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+        safety++;
+      }
+
+      setTimelineDates(datesArray);
     };
 
-    loadData();
+    const LoadData = async () => {
+      if (!currentBudget) {
+        console.error("Orçamento inválido");
+        return;
+      }
+
+      const data = await getEquipmentsTimelineByBudget(currentBudget?.id);
+      setEquipmentsInBudgets(data);
+    };
+
     dateLoader();
-  }, [currentProject]);
+    LoadData();
+  }, [timelineBudgets, currentBudget]);
 
   // Função utilitária para verificar se a data está no range
   const isDateInRange = (date, startStr, endStr) => {
@@ -64,16 +67,17 @@ export default function BudgetTimeline({ searchTerm, times }) {
   };
 
   const formatDateHeader = (date) => {
+    if (!date || isNaN(date.getTime())) return "-";
     return date.toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "2-digit",
     });
   };
 
-  if (!equipments)
+  // Loading state simples
+  if (!timelineEquipments) {
     return <div className="text-gray-500 p-4">Carregando dados...</div>;
-  if (timelineDates.length === 0 && currentProject)
-    return <div className="text-gray-500 p-4">Gerando cronograma...</div>;
+  }
 
   return (
     <div className="w-full max-w-[calc(100vw-280px)] overflow-x-auto pb-4 border border-gray-200 rounded-lg">
@@ -95,45 +99,43 @@ export default function BudgetTimeline({ searchTerm, times }) {
         </thead>
 
         <tbody>
-          {equipments.map((equip) => {
-            const status_equip = status?.equipments?.find(
-              (e) => e.equipment_id == equip.equipment_id
-            );
-            const time_equip = times?.equipments?.[equip.equipment_id];
-
-            return (
-              <React.Fragment key={equip.equipment_id}>
-                {/* LINHA DO EQUIPAMENTO */}
-                <tr className="border-b border-gray-100 bg-gray-50/30 hover:bg-gray-100 transition-colors">
-                  <td className="sticky left-0 z-10 font-bold text-gray-800 bg-white border-r border-gray-200 px-4">
-                    {equip.equipment_name}
-                  </td>
-                  {timelineDates.map((date, index) => (
-                    <td
-                      key={index}
-                      className="text-center border-r border-gray-200/50 last:border-0 p-0 h-10"
-                    >
-                      {isDateInRange(
-                        date,
-                        time_equip?.start_date,
-                        time_equip?.end_date
-                      ) && <StatusButton status={status_equip?.status} />}
+          {equipmentsInBudgets
+            .filter((equip) =>
+              equip?.recipe_name
+                ?.toLowerCase()
+                ?.includes(searchTerm.toLowerCase())
+            )
+            .map((equip) => {
+              const tasksDoEquipamento = timelineTasks.filter(
+                (t) => t.equipment_recipe_id == equip.equipment_recipe_id
+              );
+              return (
+                <React.Fragment key={equip.equipment_recipe_id}>
+                  {/* LINHA DO EQUIPAMENTO */}
+                  <tr className="border-b border-gray-100 bg-gray-50/30 hover:bg-gray-100 transition-colors">
+                    <td className="sticky left-0 z-10 font-bold text-gray-800 bg-white border-r border-gray-200 px-4">
+                      {equip.recipe_name}
+                      {/* Use recipe_name ou equipment_name conforme sua view */}
                     </td>
-                  ))}
-                </tr>
+                    {timelineDates.map((date, index) => (
+                      <td
+                        key={index}
+                        className="text-center border-r border-gray-200/50 last:border-0 p-0 h-10"
+                      >
+                        {isDateInRange(
+                          date,
+                          equip?.equipment_start_at,
+                          equip?.equipment_end_at
+                        ) && <StatusButton status="Pending" />}
+                      </td>
+                    ))}
+                  </tr>
 
-                {/* LINHAS DOS COMPONENTES */}
-                {components
-                  .filter((c) => c.equipment_id === equip.equipment_id)
-                  .map((comp) => {
-                    const status_comp = status?.components?.find(
-                      (c) => c.component_id == comp.component_id
-                    );
-                    const time_comp = times?.components?.[comp.component_id];
-
+                  {/* LINHAS DOS COMPONENTES (Filtradas) */}
+                  {tasksDoEquipamento.map((comp) => {
                     return (
                       <tr
-                        key={comp.component_id}
+                        key={comp.task_id || comp.component_id} // Prefira task_id se vier da view de timeline
                         className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
                       >
                         <td className="sticky left-0 z-10 text-gray-600 bg-white border-r border-gray-200 px-4 pl-8">
@@ -148,17 +150,17 @@ export default function BudgetTimeline({ searchTerm, times }) {
                           >
                             {isDateInRange(
                               date,
-                              time_comp?.start_date,
-                              time_comp?.end_date
-                            ) && <StatusButton status={status_comp?.status} />}
+                              comp?.planned_start_at,
+                              comp?.planned_end_at
+                            ) && <StatusButton status="Pending" />}
                           </td>
                         ))}
                       </tr>
                     );
                   })}
-              </React.Fragment>
-            );
-          })}
+                </React.Fragment>
+              );
+            })}
         </tbody>
       </table>
     </div>

@@ -115,10 +115,7 @@ export const getProjectsTimeline = async () => {
     const response = await axios.get(`${API_URL}/projects-timeline`);
     return response.data;
   } catch (error) {
-    console.error(
-      "Erro ao buscar cronograma de projetos",
-      error
-    );
+    console.error("Erro ao buscar cronograma de projetos", error);
     return [];
   }
 };
@@ -128,10 +125,24 @@ export const getEquipmentsTimeline = async () => {
     const response = await axios.get(`${API_URL}/equipments-timeline`);
     return response.data;
   } catch (error) {
-    console.error(
-      "Erro ao buscar cronograma de equipamentos",
-      error
+    console.error("Erro ao buscar cronograma de equipamentos", error);
+    return [];
+  }
+};
+
+export const getEquipmentsTimelineByBudget = async (budget_id) => {
+  try {
+    if (!budget_id) {
+      console.error("budget id undfinned");
+      return;
+    }
+
+    const response = await axios.get(
+      `${API_URL}/equipments-timeline/${budget_id}`
     );
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar cronograma de equipamentos", error);
     return [];
   }
 };
@@ -141,10 +152,7 @@ export const getTasksTimeline = async () => {
     const response = await axios.get(`${API_URL}/tasks-timeline`);
     return response.data;
   } catch (error) {
-    console.error(
-      "Erro ao buscar cronograma de tarefas detalhado",
-      error
-    );
+    console.error("Erro ao buscar cronograma de tarefas detalhado", error);
     return [];
   }
 };

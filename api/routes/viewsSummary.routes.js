@@ -11,6 +11,7 @@ import {
   getTimelineProjects,
   getTimelineEquipments,
   getTimelineTasks,
+  getTimelineEquipmentsByBudget
 } from "../controllers/viewsSummary.controller.js";
 
 const router = Router();
@@ -32,6 +33,7 @@ router.get("/projects-materials/:user_id", totalMaterialsProjects);
 // View Cronogramas (Timeline)
 router.get("/projects-timeline", getTimelineProjects); // Visão Macro (Projetos)
 router.get("/equipments-timeline", getTimelineEquipments); // Visão Tática (Equipamentos)
+router.get("/equipments-timeline/:budget_id", getTimelineEquipmentsByBudget); // Visão Tática (Equipamentos)
 router.get("/tasks-timeline", getTimelineTasks); // Visão Detalhada (Componentes/Tarefas)
 
 export default router;

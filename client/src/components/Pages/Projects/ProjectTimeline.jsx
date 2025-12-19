@@ -5,7 +5,6 @@ import { getComponents } from "@services/ComponentsServices";
 import { vwSummaryStatus } from "@services/ViewsSummary";
 import { selectedProjectContext } from "@content/SeletedProject.jsx";
 
-// eslint-disable-next-line no-unused-vars
 export default function ProjectTimeline({ searchTerm, times }) {
   const [equipments, setEquipments] = useState([]);
   const [components, setComponents] = useState([]);
@@ -70,10 +69,12 @@ export default function ProjectTimeline({ searchTerm, times }) {
     });
   };
 
-  if (!equipments)
+  if (!equipments) {
     return <div className="text-gray-500 p-4">Carregando dados...</div>;
-  if (timelineDates.length === 0 && currentProject)
+  }
+  if (timelineDates.length === 0 && currentProject) {
     return <div className="text-gray-500 p-4">Gerando cronograma...</div>;
+  }
 
   return (
     <div className="w-full max-w-[calc(100vw-280px)] overflow-x-auto pb-4 border border-gray-200 rounded-lg">
@@ -95,70 +96,78 @@ export default function ProjectTimeline({ searchTerm, times }) {
         </thead>
 
         <tbody>
-          {equipments.map((equip) => {
-            const status_equip = status?.equipments?.find(
-              (e) => e.equipment_id == equip.equipment_id
-            );
-            const time_equip = times?.equipments?.[equip.equipment_id];
+          {equipments
+            .filter((equip) =>
+              equip?.equipment_name
+                .toLowerCase()
+                ?.includes(searchTerm.toLowerCase())
+            )
+            .map((equip) => {
+              const status_equip = status?.equipments?.find(
+                (e) => e.equipment_id == equip.equipment_id
+              );
+              const time_equip = times?.equipments?.[equip.equipment_id];
 
-            return (
-              <React.Fragment key={equip.equipment_id}>
-                {/* LINHA DO EQUIPAMENTO */}
-                <tr className="border-b border-gray-100 bg-gray-50/30 hover:bg-gray-100 transition-colors">
-                  <td className="sticky left-0 z-10 font-bold text-gray-800 bg-white border-r border-gray-200 px-4">
-                    {equip.equipment_name}
-                  </td>
-                  {timelineDates.map((date, index) => (
-                    <td
-                      key={index}
-                      className="text-center border-r border-gray-200/50 last:border-0 p-0 h-10"
-                    >
-                      {isDateInRange(
-                        date,
-                        time_equip?.start_date,
-                        time_equip?.end_date
-                      ) && <StatusButton status={status_equip?.status} />}
+              return (
+                <React.Fragment key={equip.equipment_id}>
+                  {/* LINHA DO EQUIPAMENTO */}
+                  <tr className="border-b border-gray-100 bg-gray-50/30 hover:bg-gray-100 transition-colors">
+                    <td className="sticky left-0 z-10 font-bold text-gray-800 bg-white border-r border-gray-200 px-4">
+                      {equip.equipment_name}
                     </td>
-                  ))}
-                </tr>
-
-                {/* LINHAS DOS COMPONENTES */}
-                {components
-                  .filter((c) => c.equipment_id === equip.equipment_id)
-                  .map((comp) => {
-                    const status_comp = status?.components?.find(
-                      (c) => c.component_id == comp.component_id
-                    );
-                    const time_comp = times?.components?.[comp.component_id];
-
-                    return (
-                      <tr
-                        key={comp.component_id}
-                        className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    {timelineDates.map((date, index) => (
+                      <td
+                        key={index}
+                        className="text-center border-r border-gray-200/50 last:border-0 p-0 h-10"
                       >
-                        <td className="sticky left-0 z-10 text-gray-600 bg-white border-r border-gray-200 px-4 pl-8">
-                          <div className="flex items-center gap-2 text-xs">
-                            {comp.component_name}
-                          </div>
-                        </td>
-                        {timelineDates.map((date, index) => (
-                          <td
-                            key={index}
-                            className="text-center border-r border-gray-100 last:border-0 p-0 h-8"
-                          >
-                            {isDateInRange(
-                              date,
-                              time_comp?.start_date,
-                              time_comp?.end_date
-                            ) && <StatusButton status={status_comp?.status} />}
+                        {isDateInRange(
+                          date,
+                          time_equip?.start_date,
+                          time_equip?.end_date
+                        ) && <StatusButton status={status_equip?.status} />}
+                      </td>
+                    ))}
+                  </tr>
+
+                  {/* LINHAS DOS COMPONENTES */}
+                  {components
+                    .filter((c) => c.equipment_id === equip.equipment_id)
+                    .map((comp) => {
+                      const status_comp = status?.components?.find(
+                        (c) => c.component_id == comp.component_id
+                      );
+                      const time_comp = times?.components?.[comp.component_id];
+
+                      return (
+                        <tr
+                          key={comp.component_id}
+                          className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="sticky left-0 z-10 text-gray-600 bg-white border-r border-gray-200 px-4 pl-8">
+                            <div className="flex items-center gap-2 text-xs">
+                              {comp.component_name}
+                            </div>
                           </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-              </React.Fragment>
-            );
-          })}
+                          {timelineDates.map((date, index) => (
+                            <td
+                              key={index}
+                              className="text-center border-r border-gray-100 last:border-0 p-0 h-8"
+                            >
+                              {isDateInRange(
+                                date,
+                                time_comp?.start_date,
+                                time_comp?.end_date
+                              ) && (
+                                <StatusButton status={status_comp?.status} />
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                </React.Fragment>
+              );
+            })}
         </tbody>
       </table>
     </div>

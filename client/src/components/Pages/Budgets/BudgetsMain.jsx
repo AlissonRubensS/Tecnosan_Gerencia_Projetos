@@ -1,19 +1,47 @@
 // Import de funções
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 
 // Import de componentes especificos a esta página
 import BudgetEquipmentTable from "./BudgetEquipmentsTable";
 import BudgetTimeline from "./BudgetTimeline";
 
-const viewLoader = (currentBudget, searchTerm, view) => {
+import {
+  getTasksTimeline,
+  getEquipmentsTimeline,
+  getProjectsTimeline,
+} from "@services/ViewsSummary.js";
+
+const viewLoader = (
+  currentBudget,
+  searchTerm,
+  view,
+  timelineTasks,
+  timelineEquipments,
+  timelineBudgets
+) => {
   if (!currentBudget) return <h1>Escolha um projeto</h1>;
 
   switch (view) {
     case "equipments":
-      return <BudgetEquipmentTable currentBudget={currentBudget} />;
+      return (
+        <BudgetEquipmentTable
+          currentBudget={currentBudget}
+          searchTerm={searchTerm}
+          timelineTasks={timelineTasks}
+          timelineEquipments={timelineEquipments}
+        />
+      );
     case "timeline":
-      return <BudgetTimeline searchTerm={searchTerm} />;
+      return (
+        <BudgetTimeline
+          currentBudget={currentBudget}
+          searchTerm={searchTerm}
+          timelineTasks={timelineTasks}
+          timelineEquipments={timelineEquipments}
+          timelineBudgets={timelineBudgets}
+        />
+      );
     default:
       return <h1>Escolha uma tela</h1>;
   }
@@ -32,6 +60,24 @@ const btnView = (view, setView, label, text) => {
 export default function BudgetsMain({ currentBudget }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [view, setView] = useState("equipments");
+
+  const [timelineTasks, setTimelineTasks] = useState([]);
+  const [timelineEquipments, setTimelineEquipments] = useState([]);
+  const [timelineBudgets, setTimelineBudgets] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const timelineTasksData = await getTasksTimeline();
+      setTimelineTasks(timelineTasksData);
+
+      const timelineEquimentData = await getEquipmentsTimeline();
+      setTimelineEquipments(timelineEquimentData);
+
+      const timelineBudgetsData = await getProjectsTimeline();
+      setTimelineBudgets(timelineBudgetsData);
+    };
+    loadData();
+  }, []);
 
   return (
     <main className="card m-0 p-4 gap-4 overflow-y-auto">
@@ -67,7 +113,14 @@ export default function BudgetsMain({ currentBudget }) {
         </div>
       </div>
 
-      {viewLoader(currentBudget, searchTerm, view)}
+      {viewLoader(
+        currentBudget,
+        searchTerm,
+        view,
+        timelineTasks,
+        timelineEquipments,
+        timelineBudgets
+      )}
     </main>
   );
 }
