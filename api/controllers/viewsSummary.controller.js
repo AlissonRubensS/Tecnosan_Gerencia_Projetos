@@ -251,3 +251,48 @@ export const vwStatusProjects = async (req, res) => {
     res.status(500).json({ error: "Erro na requisição" });
   }
 };
+
+export const getTimelineProjects = async (req, res) => {
+  try {
+    const response = await pool.query("SELECT * FROM vw_timeline_projects;");
+
+    if (response.rowCount == 0) {
+      return res.status(404).json({ error: "Nenhum cronograma de projeto encontrado" });
+    }
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    console.error(error); // Bom para debugar no terminal
+    res.status(500).json({ error: "Erro na requisição ao buscar cronograma de projetos" });
+  }
+};
+
+export const getTimelineEquipments = async (req, res) => {
+  try {
+    const response = await pool.query("SELECT * FROM vw_timeline_equipments;");
+
+    if (response.rowCount == 0) {
+      return res.status(404).json({ error: "Nenhum cronograma de equipamento encontrado" });
+    }
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro na requisição ao buscar cronograma de equipamentos" });
+  }
+};
+
+export const getTimelineTasks = async (req, res) => {
+  try {
+    const response = await pool.query("SELECT * FROM vw_timeline_tasks;");
+
+    if (response.rowCount == 0) {
+      return res.status(404).json({ error: "Nenhuma tarefa de componente encontrada" });
+    }
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro na requisição ao buscar tarefas" });
+  }
+};

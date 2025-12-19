@@ -15,8 +15,8 @@ const router = Router();
 router.get("/project-consumed-materials/:user_id", vwProjectConsumedMaterials);
 router.get("/project-department-delays", vwProjectDepartmentDelays);
 
-router.get("/component-recipe-materials", vwComponentRecipeMaterialsSummary);
-router.get("/equipment-recipes-materials-summary",vwEquipmentRecipesMaterialSummary);
+router.get("/component/summary/:budget_id", vwComponentRecipeMaterialsSummary);
+router.get("/equipment/summary/:budget_id",vwEquipmentRecipesMaterialSummary);
 router.get("/budgets-materials-summary",vwBudgetsMaterialsSummary);
 
 router.get("/material-details-componentes-recipes/:component_recipe_id", vwMaterialDetailsComponentsRecipes);

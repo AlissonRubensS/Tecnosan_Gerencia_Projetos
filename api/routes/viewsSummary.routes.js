@@ -8,6 +8,9 @@ import {
   vwStatusProjects,
   totalValuesProjects,
   totalMaterialsProjects,
+  getTimelineProjects,
+  getTimelineEquipments,
+  getTimelineTasks,
 } from "../controllers/viewsSummary.controller.js";
 
 const router = Router();
@@ -25,5 +28,10 @@ router.get("/status/projects/", vwStatusProjects);
 // View projetos
 router.get("/projects-values/:user_id", totalValuesProjects);
 router.get("/projects-materials/:user_id", totalMaterialsProjects);
+
+// View Cronogramas (Timeline)
+router.get("/projects-timeline", getTimelineProjects); // Visão Macro (Projetos)
+router.get("/equipments-timeline", getTimelineEquipments); // Visão Tática (Equipamentos)
+router.get("/tasks-timeline", getTimelineTasks); // Visão Detalhada (Componentes/Tarefas)
 
 export default router;

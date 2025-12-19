@@ -59,10 +59,10 @@ function Budgets() {
           ]}
         />
       }
-      header={<BudgetHeader />}
+      header={<BudgetHeader currentBudget={selectedBudget}/>}
     >
       <div className="flex flex-col gap-4">
-        <BudgetsMain />
+        <BudgetsMain currentBudget={selectedBudget} />
         <BudgetFooter />
       </div>
 

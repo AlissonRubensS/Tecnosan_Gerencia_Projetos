@@ -109,3 +109,42 @@ export const vwSummaryStatus = async () => {
     return [];
   }
 };
+
+export const getProjectsTimeline = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/projects-timeline`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Erro ao buscar cronograma de projetos",
+      error
+    );
+    return [];
+  }
+};
+
+export const getEquipmentsTimeline = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/equipments-timeline`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Erro ao buscar cronograma de equipamentos",
+      error
+    );
+    return [];
+  }
+};
+
+export const getTasksTimeline = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/tasks-timeline`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Erro ao buscar cronograma de tarefas detalhado",
+      error
+    );
+    return [];
+  }
+};

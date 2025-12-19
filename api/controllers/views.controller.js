@@ -35,8 +35,28 @@ export const vwProjectDepartmentDelays = async (req, res) => {
 
 export const vwComponentRecipeMaterialsSummary = async (req, res) => {
   try {
+    const { budget_id } = req.params;
+
+    if (!budget_id)
+      return res.start_date(505).json({ error: "Dados faltantes" });
+
     const response = await pool.query(
-      "select * from vw_components_recipes_materials_summary"
+      `SELECT
+        er_cr.equipment_recipe_id,
+        er_cr.quantity_plan,
+        vwcrms.*
+      FROM budgets b
+      JOIN budgets_equipments_recipes b_er
+        ON b.budget_id = b_er.budget_id
+      JOIN equipment_recipes er
+        ON er.equipment_recipe_id = b_er.equipment_recipe_id
+      JOIN equipment_recipes_component_recipes er_cr
+        ON er_cr.equipment_recipe_id = er.equipment_recipe_id
+      JOIN vw_components_recipes_materials_summary vwcrms
+        ON vwcrms.component_recipe_id = er_cr.component_recipe_id
+      WHERE 
+        b.budget_id = $1`,
+      [budget_id]
     );
     res.status(200).json(response.rows);
   } catch (error) {
@@ -49,8 +69,22 @@ export const vwComponentRecipeMaterialsSummary = async (req, res) => {
 
 export const vwEquipmentRecipesMaterialSummary = async (req, res) => {
   try {
+    const { budget_id } = req.params;
+
+    if (!budget_id) return res.status(505).json({ error: "Dados faltantes" });
+
     const response = await pool.query(
-      "SELECT * FROM vw_equipments_recipes_materials_summary"
+      `SELECT
+        b_er.quantity_plan,
+        vwrms.*
+      FROM budgets b
+      JOIN budgets_equipments_recipes b_er
+        ON b.budget_id = b_er.budget_id
+      JOIN vw_equipments_recipes_materials_summary vwrms
+        ON vwrms.equipment_recipe_id = b_er.equipment_recipe_id
+      WHERE 
+        b.budget_id = $1`,
+      [budget_id]
     );
     res.status(200).json(response.rows);
   } catch (error) {

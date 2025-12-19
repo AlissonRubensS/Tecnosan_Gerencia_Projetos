@@ -29,10 +29,15 @@ export const vwProjectDepartmentDelays = async () => {
   }
 };
 
-export const vwEquipmentRecipesMaterialSummary = async () => {
+export const vwEquipmentRecipesMaterialSummary = async (budget_id) => {
   try {
+    if (!budget_id) {
+      console.error("Dados faltando");
+      return;
+    }
+
     const response = await axios.get(
-      API_URL + "/equipment-recipes-materials-summary"
+      API_URL + "/equipment/summary/" + budget_id
     );
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
@@ -44,9 +49,14 @@ export const vwEquipmentRecipesMaterialSummary = async () => {
   }
 };
 
-export const vwComponentRecipeMaterialsSummary = async () => {
+export const vwComponentRecipeMaterialsSummary = async (user_id) => {
   try {
-    const response = await axios.get(API_URL + "/component-recipe-materials");
+    if (!user_id) {
+      console.error("Dados faltantes");
+      return;
+    }
+
+    const response = await axios.get(API_URL + "/component/summary/" + user_id);
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error(

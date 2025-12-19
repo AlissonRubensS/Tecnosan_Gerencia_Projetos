@@ -6,18 +6,16 @@ import { FaSearch } from "react-icons/fa";
 import BudgetEquipmentTable from "./BudgetEquipmentsTable";
 import BudgetTimeline from "./BudgetTimeline";
 
-const viewLoader = (currentBudget, searchTerm, times, view) => {
+const viewLoader = (currentBudget, searchTerm, view) => {
   if (!currentBudget) return <h1>Escolha um projeto</h1>;
 
   switch (view) {
     case "equipments":
-      return (
-        <BudgetEquipmentTable searchTerm={searchTerm} times={times ?? {}} />
-      );
+      return <BudgetEquipmentTable currentBudget={currentBudget} />;
     case "timeline":
-      return <BudgetTimeline searchTerm={searchTerm} times={times ?? {}} />;
+      return <BudgetTimeline searchTerm={searchTerm} />;
     default:
-      break;
+      return <h1>Escolha uma tela</h1>;
   }
 };
 
@@ -31,7 +29,7 @@ const btnView = (view, setView, label, text) => {
   }
 };
 
-export default function BudgetsMain({ currentBudget, times }) {
+export default function BudgetsMain({ currentBudget }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [view, setView] = useState("equipments");
 
@@ -69,7 +67,7 @@ export default function BudgetsMain({ currentBudget, times }) {
         </div>
       </div>
 
-      {viewLoader(currentBudget, searchTerm, times, view)}
+      {viewLoader(currentBudget, searchTerm, view)}
     </main>
   );
 }
