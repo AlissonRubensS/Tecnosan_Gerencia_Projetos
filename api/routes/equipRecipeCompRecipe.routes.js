@@ -9,7 +9,7 @@ import {
 
 const router = Router();
 
-router.post("/", createEquipRecipeCompRecipe)
+router.post("/", createEquipRecipeCompRecipe) 
 router.get("/", readEquipRecipeCompRecipe);
 router.get("/:equipment_recipe_id", readEquipRecipeCompRecipeById);
 router.put("/:equipment_recipe_id/:component_recipe_id", updateEquipRecipeCompRecipe);

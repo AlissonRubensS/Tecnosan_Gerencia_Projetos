@@ -1,10 +1,11 @@
 import { IoMdClose } from "react-icons/io";
 import { useEffect, useState } from "react";
+import { parseBRL } from "../../../utils/IntUtils";
 
 import SelectMenu from "../../Ui/SelectMenu";
 
 import { VerifyAuth } from "@services/AuthService.js";
-import { vwComponentRecipeMaterialsSummary } from "@services/ViewsService.js";
+import { vwComponentRecipeMaterials } from "@services/ViewsService.js";
 import { createEquipmentRecipe } from "@services/EquipmentRecipesService.js";
 import { createEquipRecipeCompRecipe } from "@services/EquipRecipeCompRecipe.js";
 
@@ -16,12 +17,8 @@ export default function AddEquipmentRecipeModal({ isVisible, setVisible }) {
 
   useEffect(() => {
     const fletchComponentsRecipes = async () => {
-      const user = await VerifyAuth();
-      const data = await vwComponentRecipeMaterialsSummary(user.user_id);
-      if (!Array.isArray(data) || data.length <= 0) {
-        console.error("erro no array components recipes");
-        return null;
-      }
+      await VerifyAuth();
+      const data = await vwComponentRecipeMaterials();
       setComponentsRecipes(data);
     };
 
@@ -55,9 +52,7 @@ export default function AddEquipmentRecipeModal({ isVisible, setVisible }) {
       }
       const recipe_equipment = await createEquipmentRecipe(equipmentRecipeName);
       const equipment_recipe_id = recipe_equipment[0].equipment_recipe_id;
-      console.log("ID do Equipamento: ", equipment_recipe_id);
       for (const er_cr of componentsRecipeQuantity) {
-        console.log("relção equip -> comp: ", er_cr);
         await createEquipRecipeCompRecipe(
           equipment_recipe_id,
           er_cr.id,
@@ -112,8 +107,8 @@ export default function AddEquipmentRecipeModal({ isVisible, setVisible }) {
               <label className="text-gray-700">Componentes *</label>
               <SelectMenu
                 options={componentsRecipes.map((m) => ({
-                  id: m.component_id,
-                  label: m.componente,
+                  id: m.component_recipe_id,
+                  label: m.recipe_name,
                 }))}
                 selectedOption={componentsRecipeList}
                 setSelectedOption={setComponentRecipeList}
@@ -136,114 +131,76 @@ export default function AddEquipmentRecipeModal({ isVisible, setVisible }) {
               </thead>
 
               <tbody className="font-serif text-center">
-                {componentsRecipeList.map((id) => (
-                  <tr key={id} className="grid grid-cols-6 gap-6">
-                    {/* Material */}
-                    <td>
-                      {Array.isArray(componentsRecipeList) &&
-                      componentsRecipeList.length > 0
-                        ? (() => {
-                            const found = componentsRecipes.find(
-                              (m) => m.component_id === id
-                            );
-                            return found ? found.componente ?? "-" : "-";
-                          })()
-                        : "-"}
-                    </td>
+                {componentsRecipeList.map((id) => {
+                  if (
+                    !Array.isArray(componentsRecipeList) ||
+                    componentsRecipeList.length <= 0
+                  )
+                    return;
 
-                    {/* Horas Homem */}
-                    <td>
-                      {Array.isArray(componentsRecipeList) &&
-                      componentsRecipeList.length > 0
-                        ? (() => {
-                            const found = componentsRecipes.find(
-                              (m) => m.component_id === id
-                            );
-                            return found ? found.horas_homem ?? "-" : "-";
-                          })()
-                        : "-"}
-                    </td>
+                  const found = componentsRecipes.find(
+                    (m) => m.component_recipe_id === id
+                  );
 
-                    {/* Valor unitário */}
-                    <td>
-                      {Array.isArray(componentsRecipeList) &&
-                      componentsRecipeList.length > 0
-                        ? (() => {
-                            const found = componentsRecipes.find(
-                              (m) => m.component_id === id
-                            );
-                            return found
-                              ? Number(found.total_value).toLocaleString(
-                                  "pt-BR",
-                                  {
-                                    style: "currency",
-                                    currency: "BRL",
-                                  }
-                                )
-                              : "0.00";
-                          })()
-                        : "R$ 00,00"}
-                    </td>
+                  const qtd_find = componentsRecipeQuantity.find(
+                    (c) => c.id == id
+                  );
 
-                    {/* Quantidade */}
-                    <td>
-                      <input
-                        type="number"
-                        className="border p-1 w-20"
-                        value={
-                          componentsRecipeQuantity.find((m) => m.id === id)
-                            ?.quantity || ""
-                        }
-                        onChange={(e) => {
-                          const newValue = e.target.value;
-                          setComponentsRecipeQuantity((prev) =>
-                            prev.map((m) =>
-                              m.id === id ? { ...m, quantity: newValue } : m
-                            )
-                          );
-                        }}
-                      />
-                    </td>
+                  return (
+                    <tr key={id} className="grid grid-cols-6 gap-6">
+                      {/* Material */}
+                      <td>{found?.recipe_name ?? "-"}</td>
 
-                    {/* Valor total */}
-                    <td>
-                      {(() => {
-                        const qtd =
-                          componentsRecipeQuantity.find((q) => q.id === id)
-                            ?.quantity || 0;
-                        const unit = (() => {
-                          if (
-                            Array.isArray(componentsRecipeList) &&
-                            componentsRecipeList.length > 0
-                          ) {
-                            const found = componentsRecipes.find(
-                              (m) => m.component_id === id
-                            );
-                            return found ? Number(found.total_value) : 0;
+                      {/* Horas Homem */}
+                      <td>{found?.horas_homem ?? "-"}</td>
+
+                      {/* Valor unitário */}
+                      <td>{parseBRL(found?.total_value) ?? parseBRL(0)}</td>
+
+                      {/* Quantidade */}
+                      <td>
+                        <input
+                          type="number"
+                          className="border p-1 w-20"
+                          value={
+                            componentsRecipeQuantity.find((m) => m.id === id)
+                              ?.quantity || ""
                           }
-                          return 0;
-                        })();
-                        return (qtd * unit).toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        });
-                      })()}
-                    </td>
-                    <td>
-                      <button
-                        className="bnt font-normal font-sans"
-                        type="button"
-                        onClick={() => {
-                          setComponentRecipeList(
-                            componentsRecipeList.filter((i) => i != id)
-                          );
-                        }}
-                      >
-                        Excluir
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            setComponentsRecipeQuantity((prev) =>
+                              prev.map((m) =>
+                                m.id === id
+                                  ? { ...m, quantity: parseInt(newValue) }
+                                  : m
+                              )
+                            );
+                          }}
+                        />
+                      </td>
+
+                      {/* Valor total */}
+                      <td>
+                        {parseBRL(qtd_find?.quantity * found?.total_value) ??
+                          parseBRL(0)}
+                      </td>
+
+                      <td>
+                        <button
+                          className="bnt font-normal font-sans"
+                          type="button"
+                          onClick={() => {
+                            setComponentRecipeList(
+                              componentsRecipeList.filter((i) => i != id)
+                            );
+                          }}
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

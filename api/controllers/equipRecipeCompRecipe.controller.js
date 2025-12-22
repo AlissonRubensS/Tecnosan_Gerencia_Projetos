@@ -8,13 +8,13 @@ export const createEquipRecipeCompRecipe = async (req, res) => {
       return res.status(400).json({ message: "Algum dado está faltando" });
     }
     const response = await pool.query(
-      `INSERT INTO 
-            equipment_recipes_component_recipes(equipment_recipe_id, component_recipe_id, quantity_plan)
+      `INSERT INTO equipment_recipes_component_recipes
+            (equipment_recipe_id, component_recipe_id, quantity_plan)
         VALUES ($1, $2, $3)
         RETURNING *`,
       [equipment_recipe_id, component_recipe_id, quantity_plan]
     );
-    res.status(200).json(response.rows);
+    res.status(200).json(response.row);
   } catch (error) {
     res
       .status(500)

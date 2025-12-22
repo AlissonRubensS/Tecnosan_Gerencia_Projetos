@@ -9,7 +9,7 @@ import {
   vwMaterialDetailsEquipmentsRecipes,
   getTimesCascade,
   vwComponentRecipeMaterials,
-  vwEquipmentMaterialsSummary
+  vwEquipmentMaterialsSummary,
 } from "../controllers/views.controller.js";
 
 const router = Router();

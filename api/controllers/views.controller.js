@@ -232,7 +232,7 @@ export const vwEquipmentMaterialsSummary = async (req, res) => {
     const response = await pool.query(
       "SELECT * FROM vw_equipments_recipes_materials_summary"
     );
-    
+
     res.status(200).json(response.rows);
   } catch (error) {
     console.error("Erro ao buscar resumo de materiais de equipamentos", error);

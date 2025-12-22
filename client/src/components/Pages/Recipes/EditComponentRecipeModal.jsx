@@ -10,7 +10,7 @@ import {
   createCompRecipeMat,
   readCompRecipeMatByComp,
   updateCompRecipeMat,
-  deleteCompRecipeMat,   // <-- RENOMEADO
+  deleteCompRecipeMat,
 } from "@services/ComponentRecipeMaterials.js";
 
 export default function EditComponentRecipeModal({
@@ -92,11 +92,7 @@ export default function EditComponentRecipeModal({
   // ----------------------------------------------------------
   const handleSave = async () => {
     try {
-      if (
-        !componenteRecipeName ||
-        !manHours ||
-        materialsList.length <= 0
-      ) {
+      if (!componenteRecipeName || !manHours || materialsList.length <= 0) {
         console.error("Informações inválidas!");
         return;
       }
@@ -127,6 +123,7 @@ export default function EditComponentRecipeModal({
       }
 
       clearStates();
+      window.location.reload();
     } catch (err) {
       console.error("Erro ao salvar lista de materiais", err);
     }
@@ -149,7 +146,9 @@ export default function EditComponentRecipeModal({
         >
           {/* Título */}
           <div className="flex flex-row items-center justify-between">
-            <p className="text-lg font-semibold">Editar Receita do Componente</p>
+            <p className="text-lg font-semibold">
+              Editar Receita do Componente
+            </p>
             <button onClick={() => clearStates()} type="button">
               <IoMdClose className="text-gray-600 hover:text-gray-700 hover:bg-gray-300 rounded" />
             </button>

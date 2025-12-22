@@ -7,6 +7,7 @@ import RenderSubTable from "./RenderSubTable.jsx";
 
 import { deleteMaterial } from "@services/MaterialService.js";
 import { deleteComponentRecipe } from "@services/ComponentRecipes.js";
+import { deleteEquipmentRecipe } from "@services/EquipmentRecipesService.js";
 
 export default function RecipeTable({ i }) {
   const [modalDeleteVisible, setModalDeleteVisible] = useState({
@@ -48,7 +49,10 @@ export default function RecipeTable({ i }) {
     Equipamento: {
       title: "Quer excluir esse equipamento?",
       body: "Tem certeza que quer excluir esse equipamento? A ação não é reversivel",
-      deleteFunc: () => console.log("DELETANDO EQUIPAMENTO"),
+      deleteFunc: async (id) => {
+        await deleteEquipmentRecipe(id);
+        window.location.reload();
+      },
     },
   };
 
@@ -169,11 +173,7 @@ export default function RecipeTable({ i }) {
                       </td>
                     </tr>
 
-                    <RenderSubTable
-                      row={row}
-                      expandedRow={expandedRow}
-                      i={i}
-                    />
+                    <RenderSubTable row={row} expandedRow={expandedRow} i={i} />
                   </React.Fragment>
                 ))}
               </tbody>
