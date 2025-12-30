@@ -1,22 +1,24 @@
 import { IoMdClose } from "react-icons/io";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { formatDateForInput } from "../../../utils/dateUtils";
 import SelectMenu from "../../Ui/SelectMenu";
+
+import { vwMaterialDetailsComponentsRecipes } from "@services/ViewsService.js";
 
 function TaskModal({
   isOpen,
   setOpen,
   employees = [],
-  taskData = null,
   responsible = [],
+  taskData = null,
+  recipe = null,
 }) {
-  const [taskName, setTaskName] = useState("");
-
   // Datas e Prazos
   const [startDate, setStartDate] = useState("");
   const [deadline, setDeadline] = useState("");
   const [finishDate, setFinishDate] = useState("");
-
+  const [status, setStatus] = useState([]);
   // Tempo total (Pode ser calculado ou inserido manualmente)
   const [totalTimeSpent, setTotalTimeSpent] = useState("");
 
@@ -25,18 +27,22 @@ function TaskModal({
   const [materials, setMaterials] = useState([]);
 
   useEffect(() => {
-    if (isOpen && taskData) {
-      setTaskName(taskData.component_name || "");
-      setStartDate(taskData.start_date || "");
-      setFinishDate(taskData.completion_date || "");
-      setSelectEmp(responsible.map((res) => res.user_id) || []);
+    const init = async () => {
+      if (isOpen && taskData) {
+        setStartDate(formatDateForInput(taskData.start_date) || "");
+        setFinishDate(formatDateForInput(taskData.completion_date) || "");
+        setDeadline(formatDateForInput(taskData.deadline));
+        setSelectEmp(responsible.map((res) => res.user_id) || []);
 
-      // Exemplo de estrutura de materiais para popular a tabela
-      setMaterials([
-        { id: 1, name: "Filamento PLA", recipeQty: "200g", usedQty: "210g" },
-        { id: 2, name: "Parafuso M3", recipeQty: "4 un", usedQty: "4 un" },
-      ]);
-    }
+        const materialData = await vwMaterialDetailsComponentsRecipes(
+          taskData.component_recipe_id
+        );
+
+        if (!Array.isArray(materialData)) return;
+        setMaterials(materialData);
+      }
+    };
+    init();
   }, [isOpen, responsible, taskData]);
 
   const handleSubmit = async (e) => {
@@ -44,7 +50,7 @@ function TaskModal({
     try {
       // 1. Lógica de envio/atualização aqui
       console.log("Enviando dados:", {
-        taskName,
+        taskData,
         finishDate,
         materials,
         totalTimeSpent,
@@ -74,17 +80,29 @@ function TaskModal({
         </div>
 
         {/* --- Nome da Tarefa --- */}
-        <div className="flex flex-col w-full">
-          <label className="text-gray-700 font-medium">
-            Nome da Tarefa / Peça
-          </label>
-          <input
-            type="text"
-            className="p-2 rounded bg-white"
-            value={taskName}
-            onChange={(e) => setTaskName(e.target.value)}
-            placeholder="Nome da atividade"
-          />
+        <div className="flex flex-row items-center justify-between space-x-8">
+          <div className="flex flex-col w-full">
+            <label className="text-gray-700 font-medium">
+              Nome da Tarefa / Peça
+            </label>
+            <p className="p-2 rounded bg-white">
+              {taskData.component_name || ""}
+            </p>
+          </div>
+          <div className="flex flex-col w-full">
+            <label>Status *</label>
+            <SelectMenu
+              maxSelections={1}
+              options={[
+                { id: "Pending", label: "Planejado" },
+                { id: "Running", label: "Em Execução" },
+                { id: "Completed", label: "Concluído" },
+                { id: "Failed", label: "Não Concluído" },
+              ]}
+              selectedOption={status}
+              setSelectedOption={setStatus}
+            />
+          </div>
         </div>
 
         {/* --- Linha de Datas (Início e Prazo) --- */}
@@ -108,20 +126,24 @@ function TaskModal({
               onChange={(e) => setDeadline(e.target.value)}
             />
           </div>
-        </div>
-
-        {/* --- Linha de Finalização e Tempo Gasto --- */}
-        <div className="flex flex-row items-center justify-between space-x-8">
           <div className="flex flex-col w-full">
-            <label className="text-gray-700 font-bold">
-              Data de Finalização
-            </label>
+            <label className="text-gray-700">Data de Finalização</label>
             <input
               type="datetime-local"
               className="p-2 rounded border-2"
               value={finishDate}
               onChange={(e) => setFinishDate(e.target.value)}
             />
+          </div>
+        </div>
+
+        {/* --- Linha de Finalização e Tempo Gasto --- */}
+        <div className="flex flex-row items-center justify-between space-x-8">
+          <div className="flex flex-col w-full">
+            <label className="text-gray-700 font-bold">
+              Tempo Total Planejado
+            </label>
+            <p className="p-2 rounded bg-white"> {recipe?.man_hours} </p>
           </div>
           <div className="flex flex-col w-full">
             <label className="text-gray-700 font-bold">Tempo Total Gasto</label>
@@ -166,10 +188,12 @@ function TaskModal({
               <tbody>
                 {materials.map((mat, index) => (
                   <tr key={index} className="border-b last:border-0">
-                    <td className="px-4 py-2">{mat.name}</td>
-                    <td className="px-4 py-2 text-gray-500">{mat.recipeQty}</td>
+                    <td className="px-4 py-2">{mat.material_name}</td>
+                    <td className="px-4 py-2 text-gray-500">
+                      {mat.quantity_plan} {mat.uni}
+                    </td>
                     <td className="px-4 py-2">
-                      {/* Input para editar o que foi realmente gasto */}
+                      {/* Input para editar o que foi realmente gasto */} {/** <-- Revisar essa lógica de acordo com o banco */}
                       <input
                         type="text"
                         value={mat.usedQty}

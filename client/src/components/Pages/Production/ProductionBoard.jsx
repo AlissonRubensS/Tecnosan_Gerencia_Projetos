@@ -8,6 +8,7 @@ export default function ProductionBoard({
   responsible,
   setIsAddOpen,
   employees,
+  recipes,
 }) {
   const [isOpen, setOpen] = useState(false);
   const [selectTask, setSelectTask] = useState(null);
@@ -23,6 +24,7 @@ export default function ProductionBoard({
   const handleTaskClick = (task) => {
     console.log("Tarefa clicada:", selectTask);
     console.log("Responsaveis:", responsible);
+    console.log("Recipe: ", recipes);
     setOpen(!isOpen);
     setSelectTask(task);
   };
@@ -36,6 +38,9 @@ export default function ProductionBoard({
         employees={employees}
         responsible={responsible.filter(
           (res) => selectTask?.component_id == res.component_id
+        )}
+        recipe={recipes.find(
+          (rec) => selectTask?.component_recipe_id == rec.component_recipe_id
         )}
       />
 

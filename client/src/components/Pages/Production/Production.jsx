@@ -149,6 +149,7 @@ export default function Production() {
           responsible={responsible}
           setIsAddOpen={setIsAddOpen}
           employees={employees}
+          recipes={recipes}
         />
       </div>
     </>
