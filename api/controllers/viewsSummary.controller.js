@@ -1,3 +1,4 @@
+import { async } from "postcss-js";
 import { pool } from "../config/db.js";
 
 function buildHierarchy(rows) {
@@ -288,5 +289,22 @@ export const getTimelineTasks = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erro na requisição ao buscar tarefas" });
+  }
+};
+
+export const vwComponentMaterialsSummary = async (req, res) => {
+  try {
+    const response = await pool.query(
+      "SELECT * FROM vw_component_materials_summary;"
+    );
+
+    if (response.rowCount == 0) {
+      res.status(404).json({ error: "Nenhum material encontrado" });
+    }
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ menssage: error.menssage });
   }
 };

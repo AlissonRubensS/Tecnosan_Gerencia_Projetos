@@ -9,7 +9,8 @@ import {
   getTimelineProjects,
   getTimelineEquipments,
   getTimelineTasks,
-  getTimelineEquipmentsByBudget
+  getTimelineEquipmentsByBudget,
+  vwComponentMaterialsSummary,
 } from "../controllers/viewsSummary.controller.js";
 
 const router = Router();
@@ -17,6 +18,7 @@ const router = Router();
 // Views de mmateriais
 router.get("/projects/:user_id", vwProjectMaterialsSummary);
 router.get("/total/projects/:user_id", vwTotalsMaterialsProjecst);
+router.get("/component/material/summary", vwComponentMaterialsSummary);
 
 // View de status
 router.get("/status/equipments/", vwStatusEquipments);

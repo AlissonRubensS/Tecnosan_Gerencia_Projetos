@@ -5,6 +5,9 @@ import { formatDateForInput } from "../../../utils/dateUtils";
 import SelectMenu from "../../Ui/SelectMenu";
 
 import { vwMaterialDetailsComponentsRecipes } from "@services/ViewsService.js";
+7;
+import { vwComponentMaterialsSummary } from "@services/ViewsSummary.js";
+7;
 
 function TaskModal({
   isOpen,
@@ -19,13 +22,21 @@ function TaskModal({
   const [deadline, setDeadline] = useState("");
   const [finishDate, setFinishDate] = useState("");
   const [status, setStatus] = useState([]);
+
   // Tempo total (Pode ser calculado ou inserido manualmente)
   const [totalTimeSpent, setTotalTimeSpent] = useState("");
+  const [consumedMaterial, setConsumendMaterial] = useState([]);
 
   // Pessoas e Materiais
   const [selectEmp, setSelectEmp] = useState([]);
   const [materials, setMaterials] = useState([]);
 
+  const listStatus = [
+                { id: "Pending", label: "Planejado" },
+                { id: "Running", label: "Em Execução" },
+                { id: "Completed", label: "Concluído" },
+                { id: "Failed", label: "Não Concluído" },
+              ]
   useEffect(() => {
     const init = async () => {
       if (isOpen && taskData) {
@@ -33,13 +44,22 @@ function TaskModal({
         setFinishDate(formatDateForInput(taskData.completion_date) || "");
         setDeadline(formatDateForInput(taskData.deadline));
         setSelectEmp(responsible.map((res) => res.user_id) || []);
+        setStatus([taskData.status]);
 
         const materialData = await vwMaterialDetailsComponentsRecipes(
           taskData.component_recipe_id
         );
 
-        if (!Array.isArray(materialData)) return;
+        const consumedMaterialData = await vwComponentMaterialsSummary();
+
+        if (
+          !Array.isArray(materialData) ||
+          !Array.isArray(consumedMaterialData)
+        )
+          return;
+
         setMaterials(materialData);
+        setConsumendMaterial(consumedMaterialData);
       }
     };
     init();
@@ -48,14 +68,16 @@ function TaskModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // 1. Lógica de envio/atualização aqui
-      console.log("Enviando dados:", {
-        taskData,
+      const status_ = status[0]
+      console.log("Enviando: ", {
+        status_,
+        startDate,
+        deadline,
         finishDate,
-        materials,
         totalTimeSpent,
-      });
-
+        employees,
+        materials
+      })
       setOpen(false);
     } catch (error) {
       console.error("Erro ao salvar tarefa:", error);
@@ -93,12 +115,7 @@ function TaskModal({
             <label>Status *</label>
             <SelectMenu
               maxSelections={1}
-              options={[
-                { id: "Pending", label: "Planejado" },
-                { id: "Running", label: "Em Execução" },
-                { id: "Completed", label: "Concluído" },
-                { id: "Failed", label: "Não Concluído" },
-              ]}
+              options={listStatus}
               selectedOption={status}
               setSelectedOption={setStatus}
             />
@@ -114,7 +131,6 @@ function TaskModal({
               className="p-2 rounded bg-gray-50"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              disabled // Talvez desabilitar se for apenas visualização
             />
           </div>
           <div className="flex flex-col w-full">
@@ -183,31 +199,44 @@ function TaskModal({
                   <th className="px-4 py-2">Material</th>
                   <th className="px-4 py-2">Qtd. Receita</th>
                   <th className="px-4 py-2">Qtd. Usada</th>
+                  <th className="px-4 py-2">Adicionar</th>
                 </tr>
               </thead>
               <tbody>
-                {materials.map((mat, index) => (
-                  <tr key={index} className="border-b last:border-0">
-                    <td className="px-4 py-2">{mat.material_name}</td>
-                    <td className="px-4 py-2 text-gray-500">
-                      {mat.quantity_plan} {mat.uni}
-                    </td>
-                    <td className="px-4 py-2">
-                      {/* Input para editar o que foi realmente gasto */} {/** <-- Revisar essa lógica de acordo com o banco */}
-                      <input
-                        type="text"
-                        value={mat.usedQty}
-                        className="w-20 p-1 border rounded bg-yellow-50 focus:bg-white"
-                        onChange={(e) => {
-                          // Lógica para atualizar o array de materials
-                          const newMaterials = [...materials];
-                          newMaterials[index].usedQty = e.target.value;
-                          setMaterials(newMaterials);
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {materials.map((mat, index) => {
+                  const found = consumedMaterial.find(
+                    (aux) =>
+                      mat?.material_id == aux?.material_id &&
+                      taskData?.component_id == aux?.component_id
+                  );
+                  const amount = found?.total_consumed || 0;
+                  return (
+                    <tr key={index} className="border-b last:border-0">
+                      <td className="px-4 py-2">{mat.material_name}</td>
+                      <td className="px-4 py-2">
+                        {mat.quantity_plan} {mat.uni}
+                      </td>
+
+                      <td className="px-4 py-2">
+                        {amount} {mat.uni}
+                      </td>
+
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={mat.usedQty}
+                          className="w-20 p-1 border rounded bg-yellow-50 focus:bg-white"
+                          onChange={(e) => {
+                            // Lógica para atualizar o array de materials
+                            const newMaterials = [...materials];
+                            newMaterials[index].usedQty = e.target.value;
+                            setMaterials(newMaterials);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
                 {/* Exemplo vazio se não tiver dados */}
                 {materials.length === 0 && (
                   <tr>

@@ -164,3 +164,17 @@ export const getTasksTimeline = async () => {
     return [];
   }
 };
+
+export const vwComponentMaterialsSummary = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/component/material/summary`);
+    if (response.data) {
+      return response.data;
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};

@@ -22,9 +22,9 @@ export default function ProductionBoard({
   };
 
   const handleTaskClick = (task) => {
-    console.log("Tarefa clicada:", selectTask);
-    console.log("Responsaveis:", responsible);
-    console.log("Recipe: ", recipes);
+    // console.log("Tarefa clicada:", selectTask);
+    // console.log("Responsaveis:", responsible);
+    // console.log("Recipe: ", recipes);
     setOpen(!isOpen);
     setSelectTask(task);
   };
