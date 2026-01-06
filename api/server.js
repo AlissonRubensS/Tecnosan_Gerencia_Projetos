@@ -23,7 +23,8 @@ import equipRecipeCompRecipeRoutes from "./routes/equipRecipeCompRecipe.routes.j
 import equipmentRecipeRouter from "./routes/equipmentRecipe.routes.js";
 import budgetsEquipRecipesRouter from "./routes/budgetsEquipRecipes.routes.js";
 import budgetRoutes from "./routes/budget.routes.js";
-import employeesComponentsRoutes from "./routes/employees_components.routes.js"
+import employeesComponentsRoutes from "./routes/employees_components.routes.js";
+import componentsMaterialsRoutes from "./routes/components.materials.routes.js";
 
 const app = express();
 app.use(cors());
@@ -34,7 +35,7 @@ app.use(express.json());
 // Rotas de Comuns
 app.use("/auth", authRoutes);
 app.use("/departments", departmentsRoutes);
-app.use("/employees_components", employeesComponentsRoutes)
+app.use("/employees_components", employeesComponentsRoutes);
 app.use("/employees", employeesRoutes);
 app.use("/materials", materialRoutes);
 app.use("/views", viewRoutes);
@@ -42,6 +43,7 @@ app.use("/vwSummary", viewsSummaryRoutes);
 
 // Rotas para o que é Realmente produzido
 app.use("/components", componentsRoutes);
+app.use("/components/materials", componentsMaterialsRoutes);
 app.use("/equipments", equipmentRoutes);
 app.use("/projects", projectsRoutes);
 

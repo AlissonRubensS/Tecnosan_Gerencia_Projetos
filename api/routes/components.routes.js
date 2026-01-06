@@ -12,7 +12,7 @@ const router = Router();
 router.get("/status", getComponentStatus);
 router.get("/", getComponents);
 router.post("/", createComponents);
-router.put("/", updateComponents);
+router.put("/:component_id", updateComponents);
 router.delete("/", deleteComponent);
 
 export default router;

@@ -45,16 +45,18 @@ export const deleteEmployeesComponents = async (req, res) => {
     }
 
     const response = await pool.query(
-      `DELETE FROM components
-      WHERE component_id = $1 and user_id = $2;`,
-      [equipment_id, user_id]
+      `DELETE FROM employees_components 
+       WHERE component_id = $1 AND user_id = $2;`,
+      [component_id, user_id]
     );
 
     if (response.rowCount == 0) {
-      return res.status(404).json({ error: "Componente não foi encontrado" });
+      return res.status(404).json({ error: "Vínculo não encontrado" });
     }
-    res.status(200).json(response.rows);
+
+    res.status(200).json({ message: "Deletado com sucesso" });
   } catch (error) {
-    res.status(500).json({ error: error.menssage });
+    console.error(error);
+    res.status(500).json({ error: error.message });
   }
 };

@@ -63,7 +63,7 @@ export const createComponents = async (
       status,
       equipment_id,
       department_id,
-      component_recipe_id
+      component_recipe_id,
     });
 
     return response.data;
@@ -74,34 +74,26 @@ export const createComponents = async (
 
 export const updateComponents = async (
   component_id,
-  component_name,
-  completion_name,
+  completion_date,
   start_date,
   deadline,
   status,
-  equipment_id
+  department_id,
+  total_time_spent 
 ) => {
   try {
-    if (
-      !component_id ||
-      !component_name ||
-      !completion_name ||
-      !start_date ||
-      !deadline ||
-      !status ||
-      !equipment_id
-    ) {
-      console.error("dados insuficientes");
+    if (!component_id || !status) {
+      console.error("IDs e Status são obrigatórios");
       return;
     }
 
     const response = await axios.put(`${API_URL}/${component_id}`, {
-      component_name,
-      completion_name,
+      completion_date,
       start_date,
       deadline,
       status,
-      equipment_id,
+      department_id,
+      total_time_spent, // <--- Enviando no corpo
     });
 
     return response.data;

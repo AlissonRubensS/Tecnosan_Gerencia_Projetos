@@ -40,7 +40,7 @@ export const createComponents = async (req, res) => {
       status,
       equipment_id,
       department_id,
-      component_recipe_id
+      component_recipe_id,
     } = req.body;
 
     if (
@@ -60,7 +60,7 @@ export const createComponents = async (req, res) => {
         status,
         equipment_id,
         department_id,
-        component_recipe_id
+        component_recipe_id,
       });
       return res.status(500).json({ error: "dados insuficientes" });
     }
@@ -79,7 +79,7 @@ export const createComponents = async (req, res) => {
         status,
         equipment_id,
         department_id,
-        component_recipe_id
+        component_recipe_id,
       ]
     );
 
@@ -92,51 +92,41 @@ export const createComponents = async (req, res) => {
 export const updateComponents = async (req, res) => {
   try {
     const { component_id } = req.params;
+    // Adicionei total_time_spent aqui
     const {
-      component_name,
-      completion_name,
+      completion_date,
       start_date,
       deadline,
       status,
-      equipment_id,
       department_id,
+      total_time_spent,
     } = req.body;
 
-    if (
-      !component_id ||
-      !completion_name ||
-      !start_date ||
-      !deadline ||
-      !status ||
-      !equipment_id ||
-      !department_id
-    ) {
-      return res.status(500).json({ error: "dados insuficientes" });
-    }
     const response = await pool.query(
       `UPDATE components
-      SET 
-        component_name = $1, 
-        start_date = $2,
-        deadline = $3,
-        status = $4,
-        equipment_id = $5,
-        department_id = $6,
-      WHERE component_id = $6;`,
+       SET 
+         completion_date = $1,
+         start_date = $2,
+         deadline = $3,
+         status = $4,
+         department_id = $5,
+         total_time_spent = $6 
+       WHERE component_id = $7 RETURNING *;`,
       [
-        component_name,
-        completion_name,
+        completion_date,
         start_date,
         deadline,
         status,
-        equipment_id,
         department_id,
+        total_time_spent || 0,
+        component_id,
       ]
     );
 
-    res.status(200).json(response.rows);
+    res.status(200).json(response.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: error.menssage });
+    console.error(error); // Bom para debugar no terminal do servidor
+    res.status(500).json({ error: error.message });
   }
 };
 
