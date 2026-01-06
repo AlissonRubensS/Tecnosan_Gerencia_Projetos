@@ -150,6 +150,9 @@ export default function Production() {
           setIsAddOpen={setIsAddOpen}
           employees={employees}
           recipes={recipes}
+          selectedDept={selectedDept}
+          selectedProj={selectedProj}
+          selectedEmp={selectedEmp}
         />
       </div>
     </>

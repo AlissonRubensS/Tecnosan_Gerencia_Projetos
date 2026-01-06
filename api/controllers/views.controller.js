@@ -239,3 +239,53 @@ export const vwEquipmentMaterialsSummary = async (req, res) => {
     res.status(500).json({ error: "Erro interno ao buscar equipamentos" });
   }
 };
+
+// -- PESQUISAS PONTUAIS --
+export const projectTask = async (req, res) => {
+  try {
+    const { component_id } = req.params;
+
+    if (!component_id)
+      return res.status(400).json({ error: "Dados insuficientes" });
+
+    const response = await pool.query(
+      `SELECT 
+	        E.PROJECT_ID
+        FROM COMPONENTS C
+        LEFT JOIN 
+	        EQUIPMENTS E ON E.EQUIPMENT_ID = C.EQUIPMENT_ID
+        WHERE 
+	        C.COMPONENT_ID = $1;`,
+      [component_id]
+    );
+
+    res.status(200).json(response.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.json(500).json({ error: "Erro no servidor interno" });
+  }
+};
+
+export const employeesTask = async (req, res) => {
+  try {
+    const { component_id } = req.params;
+
+    if (!component_id)
+      return res.status(400).json({ error: "Dados insuficientes" });
+
+    const response = await pool.query(
+      `SELECT 
+        EC.USER_ID
+      FROM EMPLOYEES_COMPONENTS EC
+      LEFT JOIN 
+        COMPONENTS C ON C.COMPONENT_ID = EC.COMPONENT_ID
+      WHERE C.COMPONENT_ID = $1;`,
+      [component_id]
+    );
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    console.error(error);
+    res.json(500).json({ error: "Erro no servidor interno" });
+  }
+};

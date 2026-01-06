@@ -126,7 +126,6 @@ export const getTimesCascade = async () => {
   }
 };
 
-
 export const vwComponentRecipeMaterials = async () => {
   try {
     const response = await axios.get(`${API_URL}/recipe/component`);
@@ -147,4 +146,28 @@ export const vwEquipmentMaterialsSummary = async () => {
   }
 };
 
+export const projectTask = async (component_id) => {
+  try {
+    if (!component_id) {
+      console.error("Dados insuficientes");
+    }
+    const response = await axios.get(`${API_URL}/projectTask/${component_id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Erro no front, ", error);
+    return null;
+  }
+};
 
+export const employeesTask = async (component_id) => {
+  try {
+    if (!component_id) {
+      console.error("Dados insuficientes");
+    }
+    const response = await axios.get(`${API_URL}/employeesTask/${component_id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Erro no front, ", error);
+    return null;
+  }
+};

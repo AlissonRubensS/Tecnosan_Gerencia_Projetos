@@ -14,15 +14,20 @@ export default function ProductionFilters({
   selectedEmp,
   setSelectedEmp,
 }) {
+
   return (
     <div className="card rounded-md flex flex-wrap space-x-2">
       <div className="flex flex-row items-center space-x-2">
         <CiFilter className="h-5 w-5" />
         <p>Departamento:</p>
         <SelectMenu
-          options={departments.map((dep) => ({ id: dep.departament_id, label: dep.department_name }))}
+          options={departments.map((dep) => ({
+            id: dep.department_id,
+            label: dep.department_name,
+          }))}
           selectedOption={selectedDept}
           setSelectedOption={setSelectedDept}
+          maxSelections={1}
         />
       </div>
 
@@ -30,7 +35,10 @@ export default function ProductionFilters({
         <LuFolderKanban className="h-5 w-5" />
         <p>Projetos:</p>
         <SelectMenu
-          options={projects.map((proj) => ({ id: proj.project_id, label: proj.project_name }))}
+          options={projects.map((proj) => ({
+            id: proj.project_id,
+            label: proj.project_name,
+          }))}
           selectedOption={selectedProj}
           setSelectedOption={setSelectedProj}
         />
@@ -40,7 +48,10 @@ export default function ProductionFilters({
         <FiUser className="h-5 w-5" />
         <p>Funcionário:</p>
         <SelectMenu
-          options={employees.map((emp) => ({ id: emp.user_id, label: emp.user_name }))}
+          options={employees.map((emp) => ({
+            id: emp.user_id,
+            label: emp.user_name,
+          }))}
           selectedOption={selectedEmp}
           setSelectedOption={setSelectedEmp}
         />
