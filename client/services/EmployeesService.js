@@ -1,9 +1,8 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/employees";
+import api from "./api.js";
 
 export const listEmployees = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/employees");
     return response.data;
   } catch (err) {
     console.error("Erro ao listar funcionários", err);
@@ -21,7 +20,7 @@ export const createEmployee = async (
   department_id
 ) => {
   try {
-    const response = await axios.post(API_URL, {
+    const response = await api.post("/employees", {
       email,
       user_name,
       password,
@@ -49,7 +48,7 @@ export const editEmployee = async (
   fk_department_id
 ) => {
   try {
-    const response = await axios.put(API_URL, {
+    const response = await api.put("/employees", {
       user_id,
       email,
       user_name,

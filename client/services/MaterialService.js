@@ -1,9 +1,8 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/materials";
+import api from "./api.js";
 
 export const listMaterials = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/materials");
     return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error("Error ao listar Materiais:", error);
@@ -18,7 +17,7 @@ export const createMaterial = async (
   uni
 ) => {
   try {
-    const response = await axios.post(API_URL, {
+    const response = await api.post("/materials", {
       material_name,
       material_desc,
       value,
@@ -40,7 +39,7 @@ export const updateMaterial = async (
   material_id
 ) => {
   try {
-    const response = await axios.put(`${API_URL}/${material_id}`, {
+    const response = await api.put(`/materials/${material_id}`, {
       material_name,
       material_desc,
       value,
@@ -56,7 +55,7 @@ export const updateMaterial = async (
 
 export const deleteMaterial = async (material_id) => {
   try {
-    const response = await axios.delete(`${API_URL}/${material_id}`);
+    const response = await api.delete(`/materials/${material_id}`);
     return response.data;
   } catch (error) {
     console.error("Error criar Material:", error);

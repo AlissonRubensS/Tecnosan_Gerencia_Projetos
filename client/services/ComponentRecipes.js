@@ -1,9 +1,8 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/component-recipes";
+import api from "./api.js"
 
 export const getComponentRecipe = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/component-recipes");
     return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error("Erro ao listar as receitas dos componentes:", error);
@@ -13,7 +12,7 @@ export const getComponentRecipe = async () => {
 
 export const createComponentRecipe = async (recipe_name, man_hours) => {
   try {
-    const response = await axios.post(API_URL, {
+    const response = await api.post("/component-recipes", {
       recipe_name,
       man_hours,
     });
@@ -25,7 +24,7 @@ export const createComponentRecipe = async (recipe_name, man_hours) => {
 
 export const deleteComponentRecipe = async (component_recipe_id) => {
   try {
-    const response = await axios.delete(`${API_URL}/${component_recipe_id}`);
+    const response = await api.delete(`/component-recipes/${component_recipe_id}`);
     return response.data;
   } catch (error) {
     console.error(
@@ -43,7 +42,7 @@ export const updateComponentRecipe = async (
   man_hours
 ) => {
   try {
-    const response = await axios.put(`${API_URL}/${component_recipe_id}`, {
+    const response = await api.put(`/component-recipes/${component_recipe_id}`, {
       recipe_name,
       man_hours,
     });

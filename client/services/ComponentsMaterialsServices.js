@@ -1,5 +1,4 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/components/materials";
+import api from "./api.js";
 
 export const addMaterialConsumption = async (
   component_id,
@@ -8,13 +7,12 @@ export const addMaterialConsumption = async (
   user_id
 ) => {
   try {
-    const response = await axios.post(API_URL, {
+    const response = await api.post("/components/materials", {
       component_id,
       material_id,
       consumed_quantity,
       user_id,
     });
-    //component_id, material_id, consumed_quantity, user_id
     return response.data;
   } catch (error) {
     console.error("Erro ao registrar consumo:", error);

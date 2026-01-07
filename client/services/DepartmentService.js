@@ -1,9 +1,8 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/departments";
+import api from "./api.js"
 
 export const listDepartments = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/departments");
     return response.data;
   } catch (error) {
     console.error("Error ao listar departamentos", error);
@@ -12,7 +11,7 @@ export const listDepartments = async () => {
 
 export const createDeparment = async (department_name) => {
   try {
-    const response = await axios.post(API_URL, { department_name });
+    const response = await api.post("/departments", { department_name });
     return response.data;
   } catch (error) {
     console.error("Erro ao cadastrar novo departamento", error);
@@ -21,7 +20,7 @@ export const createDeparment = async (department_name) => {
 
 export const editDepartment = async (department_id, department_name) => {
   try {
-    const response = await axios.put(API_URL, {
+    const response = await api.put("/departments", {
       department_id,
       department_name,
     });
@@ -34,7 +33,7 @@ export const editDepartment = async (department_id, department_name) => {
 
 export const deleteDepartment = async (department_id) => {
   try {
-    const response = await axios.delete(API_URL, {
+    const response = await api.delete("/departments", {
       params: { department_id },
     });
     console.log(response.data);

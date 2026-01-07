@@ -1,9 +1,8 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/employees_components";
+import api from "./api.js"
 
 export const getEmployeesComponents = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/employees_components");
     if (Array.isArray(response.data)) {
       return response.data;
     }
@@ -19,7 +18,7 @@ export const createEmployeesComponents = async (component_id, user_id) => {
       return;
     }
 
-    const response = await axios.post(API_URL, {
+    const response = await api.post("/employees_components", {
       component_id,
       user_id,
     });
@@ -36,7 +35,7 @@ export const deleteEmployeesComponents = async (component_id, user_id) => {
       console.error("dados insuficientes");
       return;
     }
-    const response = await axios.delete(`${API_URL}/${component_id}/${user_id}`);
+    const response = await api.delete(`/employees_components/${component_id}/${user_id}`);
     return response.data;
   } catch (error) {
     console.log("Erro no service", error);

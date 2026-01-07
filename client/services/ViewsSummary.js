@@ -1,9 +1,8 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/vwSummary";
+import api from "./api.js";
 
 export const vwProjectMaterialsSummary = async (user_id) => {
   try {
-    const response = await axios.get(`${API_URL}/projects/${user_id}`);
+    const response = await api.get(`/vwSummary/projects/${user_id}`);
     return response.data;
   } catch (error) {
     console.error(
@@ -16,8 +15,8 @@ export const vwProjectMaterialsSummary = async (user_id) => {
 
 export const totalMaterialsProjects = async (user_id) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/projects-materials/${user_id}`
+    const response = await api.get(
+      `/vwSummary/projects-materials/${user_id}`
     );
     return response.data;
   } catch (error) {
@@ -31,7 +30,7 @@ export const totalMaterialsProjects = async (user_id) => {
 
 export const totalValuesProjects = async (user_id) => {
   try {
-    const response = await axios.get(`${API_URL}/projects-values/${user_id}`);
+    const response = await api.get(`/vwSummary/projects-values/${user_id}`);
     return response.data;
   } catch (error) {
     console.error(
@@ -48,7 +47,7 @@ export const vwEquipmentMaterialsSummary = async (user_id) => {
       console.error("Usuário inválido");
       return;
     }
-    const response = await axios.get(`${API_URL}/equipments/${user_id}`);
+    const response = await api.get(`/vwSummary/equipments/${user_id}`);
     return response.data ? response.data : [];
   } catch (error) {
     console.error(
@@ -65,7 +64,7 @@ export const vwComponentRecipeMaterials = async (user_id) => {
       console.error("usuario inválido");
       return;
     }
-    const response = await axios.get(API_URL + "/components/" + user_id);
+    const response = await api.get("/vwSummary/components/" + user_id);
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error(
@@ -78,7 +77,7 @@ export const vwComponentRecipeMaterials = async (user_id) => {
 
 export const vwTotalProjectsMaterials = async (user_id) => {
   try {
-    const response = await axios.get(`${API_URL}/total/projects/${user_id}`);
+    const response = await api.get(`/vwSummary/total/projects/${user_id}`);
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error("Erro no Service", error);
@@ -88,14 +87,14 @@ export const vwTotalProjectsMaterials = async (user_id) => {
 
 export const vwSummaryStatus = async () => {
   try {
-    const responseComponentStatus = await axios.get(
+    const responseComponentStatus = await api.get(
       "http://localhost:3001/components/status"
     );
-    const responseEquipmentStatus = await axios.get(
-      `${API_URL}/status/equipments/`
+    const responseEquipmentStatus = await api.get(
+      `/vwSummary/status/equipments/`
     );
-    const responseProjectsStatus = await axios.get(
-      `${API_URL}/status/projects/`
+    const responseProjectsStatus = await api.get(
+      `/vwSummary/status/projects/`
     );
 
     if (
@@ -120,7 +119,7 @@ export const vwSummaryStatus = async () => {
 
 export const getProjectsTimeline = async () => {
   try {
-    const response = await axios.get(`${API_URL}/projects-timeline`);
+    const response = await api.get(`/vwSummary/projects-timeline`);
     return response.data;
   } catch (error) {
     console.error("Erro ao buscar cronograma de projetos", error);
@@ -130,7 +129,7 @@ export const getProjectsTimeline = async () => {
 
 export const getEquipmentsTimeline = async () => {
   try {
-    const response = await axios.get(`${API_URL}/equipments-timeline`);
+    const response = await api.get(`/vwSummary/equipments-timeline`);
     return response.data;
   } catch (error) {
     console.error("Erro ao buscar cronograma de equipamentos", error);
@@ -145,8 +144,8 @@ export const getEquipmentsTimelineByBudget = async (budget_id) => {
       return;
     }
 
-    const response = await axios.get(
-      `${API_URL}/equipments-timeline/${budget_id}`
+    const response = await api.get(
+      `/vwSummary/equipments-timeline/${budget_id}`
     );
     return response.data;
   } catch (error) {
@@ -157,7 +156,7 @@ export const getEquipmentsTimelineByBudget = async (budget_id) => {
 
 export const getTasksTimeline = async () => {
   try {
-    const response = await axios.get(`${API_URL}/tasks-timeline`);
+    const response = await api.get(`/vwSummary/tasks-timeline`);
     return response.data;
   } catch (error) {
     console.error("Erro ao buscar cronograma de tarefas detalhado", error);
@@ -167,7 +166,7 @@ export const getTasksTimeline = async () => {
 
 export const vwComponentMaterialsSummary = async () => {
   try {
-    const response = await axios.get(`${API_URL}/component/material/summary`);
+    const response = await api.get(`/vwSummary/component/material/summary`);
     if (response.data) {
       return response.data;
     } else {

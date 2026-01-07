@@ -1,10 +1,9 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/views";
+import api from "./api.js";
 
 export const vwProjectConsumedMaterials = async (user_id) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/project-consumed-materials/${user_id}`
+    const response = await api.get(
+      `/views/project-consumed-materials/${user_id}`
     );
     return response.data;
   } catch (error) {
@@ -18,7 +17,7 @@ export const vwProjectConsumedMaterials = async (user_id) => {
 
 export const vwProjectDepartmentDelays = async () => {
   try {
-    const response = await axios.get(API_URL + "/project-department-delays");
+    const response = await api.get("/views/project-department-delays");
     return response.data ? response.data : [];
   } catch (error) {
     console.error(
@@ -36,8 +35,8 @@ export const vwEquipmentRecipesMaterialSummary = async (budget_id) => {
       return;
     }
 
-    const response = await axios.get(
-      API_URL + "/equipment/summary/" + budget_id
+    const response = await api.get(
+      "/views/equipment/summary/" + budget_id
     );
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
@@ -56,7 +55,7 @@ export const vwComponentRecipeMaterialsSummary = async (user_id) => {
       return;
     }
 
-    const response = await axios.get(API_URL + "/component/summary/" + user_id);
+    const response = await api.get("/views/component/summary/" + user_id);
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error(
@@ -69,7 +68,7 @@ export const vwComponentRecipeMaterialsSummary = async (user_id) => {
 
 export const vwBudgetsMaterialsSummary = async () => {
   try {
-    const response = await axios.get(API_URL + "/budgets-materials-summary");
+    const response = await api.get("/views/budgets-materials-summary");
     return response.data && Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error(
@@ -88,8 +87,8 @@ export const vwMaterialDetailsComponentsRecipes = async (
       console.error("Faltando dados");
       return null;
     }
-    const response = await axios.get(
-      `${API_URL}/material-details-componentes-recipes/${component_recipe_id}`
+    const response = await api.get(
+      `/views/material-details-componentes-recipes/${component_recipe_id}`
     );
     return response.data;
   } catch (error) {
@@ -106,8 +105,8 @@ export const vwMaterialDetailsEquipmentRecipes = async (
       console.error("Faltando dados");
       return null;
     }
-    const response = await axios.get(
-      `${API_URL}/material-details-equipment-recipes/${equipment_recipe_id}`
+    const response = await api.get(
+      `/views/material-details-equipment-recipes/${equipment_recipe_id}`
     );
     return response.data;
   } catch (error) {
@@ -118,7 +117,7 @@ export const vwMaterialDetailsEquipmentRecipes = async (
 
 export const getTimesCascade = async () => {
   try {
-    const response = await axios.get(`${API_URL}/get-times`);
+    const response = await api.get(`/views/get-times`);
     return response.data;
   } catch (error) {
     console.error("Erro no front, ", error);
@@ -128,7 +127,7 @@ export const getTimesCascade = async () => {
 
 export const vwComponentRecipeMaterials = async () => {
   try {
-    const response = await axios.get(`${API_URL}/recipe/component`);
+    const response = await api.get(`/views/recipe/component`);
     return response.data;
   } catch (error) {
     console.error("Erro no front, ", error);
@@ -138,7 +137,7 @@ export const vwComponentRecipeMaterials = async () => {
 
 export const vwEquipmentMaterialsSummary = async () => {
   try {
-    const response = await axios.get(`${API_URL}/recipe/equipment`);
+    const response = await api.get(`/views/recipe/equipment`);
     return response.data;
   } catch (error) {
     console.error("Erro no front, ", error);
@@ -151,7 +150,7 @@ export const projectTask = async (component_id) => {
     if (!component_id) {
       console.error("Dados insuficientes");
     }
-    const response = await axios.get(`${API_URL}/projectTask/${component_id}`);
+    const response = await api.get(`/views/projectTask/${component_id}`);
     return response.data;
   } catch (error) {
     console.error("Erro no front, ", error);
@@ -164,7 +163,7 @@ export const employeesTask = async (component_id) => {
     if (!component_id) {
       console.error("Dados insuficientes");
     }
-    const response = await axios.get(`${API_URL}/employeesTask/${component_id}`);
+    const response = await api.get(`/views/employeesTask/${component_id}`);
     return response.data;
   } catch (error) {
     console.error("Erro no front, ", error);

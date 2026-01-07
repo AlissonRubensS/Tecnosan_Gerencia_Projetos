@@ -1,9 +1,8 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/equip-recipe-comp-recipe";
+import api from "./api.js";
 
 export const readEquipRecipeCompRecipe = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/equip-recipe-comp-recipe");
     return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error("Error na requisição:", error);
@@ -18,7 +17,9 @@ export const readEquipRecipeCompRecipeById = async (equipment_recipe_id) => {
       return;
     }
 
-    const response = await axios.get(`${API_URL}/${equipment_recipe_id}`);
+    const response = await api.get(
+      `/equip-recipe-comp-recipe/${equipment_recipe_id}`
+    );
     return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error("Error na requisição:", error);
@@ -32,7 +33,7 @@ export const createEquipRecipeCompRecipe = async (
   quantity_plan
 ) => {
   try {
-    const response = await axios.post(API_URL, {
+    const response = await api.post("/equip-recipe-comp-recipe", {
       equipment_recipe_id,
       component_recipe_id,
       quantity_plan,
@@ -51,8 +52,8 @@ export const updateEquipRecipeCompRecipe = async (
   quantity_plan
 ) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/${equipment_recipe_id}/${component_recipe_id}`,
+    const response = await api.put(
+      `/equip-recipe-comp-recipe/${equipment_recipe_id}/${component_recipe_id}`,
       {
         quantity_plan,
       }
@@ -70,8 +71,8 @@ export const deleteEquipRecipeCompRecipe = async (
   component_recipe_id
 ) => {
   try {
-    const response = await axios.delete(
-      `${API_URL}/${equipment_recipe_id}/${component_recipe_id}`
+    const response = await api.delete(
+      `/equip-recipe-comp-recipe/${equipment_recipe_id}/${component_recipe_id}`
     );
     return response.data;
   } catch (error) {

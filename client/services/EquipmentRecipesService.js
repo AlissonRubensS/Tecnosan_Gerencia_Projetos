@@ -1,5 +1,4 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/equip-recipe";
+import api from "./api.js";
 
 export const createEquipmentRecipe = async (recipe_name) => {
   try {
@@ -8,7 +7,7 @@ export const createEquipmentRecipe = async (recipe_name) => {
       return;
     }
 
-    const response = await axios.post(API_URL, { recipe_name });
+    const response = await api.post("/equip-recipe", { recipe_name });
     return response.data;
   } catch (error) {
     console.error("Erro na requisição", error);
@@ -17,7 +16,7 @@ export const createEquipmentRecipe = async (recipe_name) => {
 
 export const readEquipmentRecipe = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/equip-recipe");
     return response.data;
   } catch (error) {
     console.error("Erro na requisição", error);
@@ -34,7 +33,7 @@ export const updateEquipmentRecipe = async (
       return;
     }
 
-    const response = await axios.put(`${API_URL}/${equipment_recipe_id}`, {
+    const response = await api.put(`/equip-recipe/${equipment_recipe_id}`, {
       recipe_name,
     });
     return response.data;
@@ -50,7 +49,7 @@ export const deleteEquipmentRecipe = async (equipment_recipe_id) => {
       return;
     }
 
-    const response = await axios.delete(`${API_URL}/${equipment_recipe_id}`);
+    const response = await api.delete(`/equip-recipe/${equipment_recipe_id}`);
     return response.data;
   } catch (error) {
     console.error("Erro na requisição", error);

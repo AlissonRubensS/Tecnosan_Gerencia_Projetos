@@ -1,8 +1,8 @@
-import axios from "axios";
+import api from "./api.js";
 
 export async function LoginService(email, pass) {
   try {
-    const response = await axios.post("http://localhost:3001/auth/login", {
+    const response = await api.post("/auth/login", {
       email,
       pass,
     });
@@ -19,7 +19,7 @@ export async function LoginService(email, pass) {
 export async function VerifyAuth() {
   try {
     const TOKEN = localStorage.getItem("token");
-    const response = await axios.get("http://localhost:3001/auth/verify", {
+    const response = await api.get("/auth/verify", {
       headers: { Authorization: `Bearer ${TOKEN}` },
     });
 

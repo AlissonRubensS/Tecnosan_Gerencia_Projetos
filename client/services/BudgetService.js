@@ -1,5 +1,4 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/budgets";
+import api from "./api.js"
 
 export async function createBudget(
   user_id,
@@ -8,7 +7,7 @@ export async function createBudget(
   budget_desc
 ) {
   try {
-    const response = await axios.post(API_URL, {
+    const response = await api.post("/budgets", {
       user_id,
       budget_name,
       budget_local,
@@ -23,7 +22,7 @@ export async function createBudget(
 
 export async function listBudgets(user_id) {
   try {
-    const response = await axios.get(`${API_URL}/${user_id}`);
+    const response = await api.get(`/budgets/${user_id}`);
     return Array.isArray(response.data) ? response.data : null;
   } catch (error) {
     console.error("Error ao listar orçamentos", error);

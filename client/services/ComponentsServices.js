@@ -1,5 +1,4 @@
-import axios from "axios";
-const API_URL = "http://localhost:3001/components";
+import api from "./api.js"
 
 export const countStatusComponents = async (
   project_id,
@@ -7,7 +6,7 @@ export const countStatusComponents = async (
   end_date
 ) => {
   try {
-    const response = await axios.get(API_URL + "/status_count", {
+    const response = await api.get("/components/status_count", {
       params: {
         project_id: project_id,
         start_date: start_date,
@@ -22,7 +21,7 @@ export const countStatusComponents = async (
 
 export const getComponents = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/components");
     if (Array.isArray(response.data)) {
       return response.data;
     }
@@ -55,7 +54,7 @@ export const createComponents = async (
       return;
     }
 
-    const response = await axios.post(API_URL, {
+    const response = await api.post("/components", {
       component_name,
       completion_date,
       start_date,
@@ -87,13 +86,13 @@ export const updateComponents = async (
       return;
     }
 
-    const response = await axios.put(`${API_URL}/${component_id}`, {
+    const response = await api.put(`/components/${component_id}`, {
       completion_date,
       start_date,
       deadline,
       status,
       department_id,
-      total_time_spent, // <--- Enviando no corpo
+      total_time_spent
     });
 
     return response.data;
@@ -108,7 +107,7 @@ export const deleteComponents = async (component_id) => {
       console.error("dados insuficientes");
       return;
     }
-    const response = await axios.delete(`${API_URL}/${component_id}`);
+    const response = await api.delete(`/components/${component_id}`);
     return response.data;
   } catch (error) {
     console.log("Erro no service", error);
