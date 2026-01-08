@@ -8,6 +8,7 @@ import InfoCard from "../../Ui/InfoCard";
 import SelectMenu from "../../Ui/SelectMenu";
 import ProjectEvolutionGraph from "./ProjectEvolutionGraph";
 import TotalConsumptionGraph from "./TotalConsumptionGraph";
+import LeadTimeGraph from "./LeadTimeGraph";
 
 // Services
 import { listProjects } from "@services/ProjectService";
@@ -21,14 +22,17 @@ import {
   vwProjectConsumedMaterials,
   vwProjectDepartmentDelays,
 } from "@services/ViewsService";
+import { getLeadTimeVsReal } from "@services/ComponentsServices";
 
 // Utils
-import { getDefaultDateRange, formatDateForApi } from "../../../utils/dateUtils";
+import {
+  getDefaultDateRange,
+  formatDateForApi,
+} from "../../../utils/dateUtils";
 
 // Assets
 import imgEntrega from "../../../imgs/entrega.png";
 import imgCaixa from "../../../imgs/caixa.png";
-import imgDesperdicio from "../../../imgs/desperdicio.png";
 
 export default function Reports() {
   // --- Estados de Filtros ---
@@ -47,8 +51,7 @@ export default function Reports() {
   // --- Estados de Métricas e Gráficos ---
   const [countStatusGraph, setCountStatusGraph] = useState([]);
   const [metrics, setMetrics] = useState({ completed: 0, pending: 0 });
-
-  // --- Funções de Busca (Data Fetching) ---
+  const [leadTimeData, setLeadTimeData] = useState([]);
 
   // 1. Dados Estáticos (Carregados uma vez)
   const fetchStaticData = async (userId) => {
@@ -63,7 +66,7 @@ export default function Reports() {
       setProjects(projData || []);
       setEquipments(equipData || []);
       setProcessDelaysList(delayData || []);
-      
+
       if (Array.isArray(materialData)) {
         setDataConsumedMaterials(materialData);
       }
@@ -74,9 +77,8 @@ export default function Reports() {
 
   // 2. Dados Dinâmicos (Dependem dos filtros)
   const fetchDashboardMetrics = useCallback(async () => {
-    // Evita chamadas desnecessárias se não tiver projeto selecionado
     const projId = selectedProj[0];
-    const equipId = selectedEquip[0]; // Pode ser null/undefined
+    const equipId = selectedEquip[0];
 
     if (!projId) return;
 
@@ -84,26 +86,32 @@ export default function Reports() {
       const formattedStart = formatDateForApi(startDate);
       const formattedEnd = formatDateForApi(endDate);
 
-      // Busca paralela para otimizar performance
-      const [graphResponse, cardsResponse] = await Promise.all([
-        countStatusComponentsByProj(projId, equipId, formattedStart, formattedEnd),
-        countStatusComponents(projId, equipId, formattedStart, formattedEnd)
-      ]);
+      // Adicione a chamada do lead time no Promise.all
+      const [graphResponse, cardsResponse, leadTimeResponse] =
+        await Promise.all([
+          countStatusComponentsByProj(
+            projId,
+            equipId,
+            formattedStart,
+            formattedEnd
+          ),
+          countStatusComponents(projId, equipId, formattedStart, formattedEnd),
+          getLeadTimeVsReal(projId, equipId, formattedStart, formattedEnd), // Nova chamada
+        ]);
 
       setCountStatusGraph(graphResponse || []);
-      
+      setLeadTimeData(leadTimeResponse || []); // Salva no estado
+
       if (cardsResponse && cardsResponse[0]) {
         setMetrics({
           completed: cardsResponse[0].total_completed || 0,
-          pending: cardsResponse[0].total_pending || 0
+          pending: cardsResponse[0].total_pending || 0,
         });
       }
     } catch (error) {
-      console.error("Erro ao atualizar métricas do dashboard:", error);
+      console.error("Erro ao atualizar métricas:", error);
     }
   }, [selectedProj, selectedEquip, startDate, endDate]);
-
-  // --- Efeitos (Side Effects) ---
 
   // Load Inicial (Autenticação + Listas Básicas)
   useEffect(() => {
@@ -117,7 +125,9 @@ export default function Reports() {
     };
 
     init();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Atualização dos Gráficos quando filtros mudam
@@ -134,7 +144,7 @@ export default function Reports() {
       {/* Header de Filtros */}
       <div className="flex flex-row bg-white py-1 px-2 items-center justify-between shadow-lg mx-4 rounded">
         <h2 className="font-bold text-lg">Dashboard</h2>
-        
+
         <div className="flex flex-row space-x-2 items-end">
           {/* Filtro Projeto */}
           <div>
@@ -142,7 +152,10 @@ export default function Reports() {
             <SelectMenu
               className="h-6"
               maxSelections={1}
-              options={projects.map((p) => ({ id: p.project_id, label: p.project_name }))}
+              options={projects.map((p) => ({
+                id: p.project_id,
+                label: p.project_name,
+              }))}
               selectedOption={selectedProj}
               setSelectedOption={setSelectedProj}
             />
@@ -154,7 +167,10 @@ export default function Reports() {
             <SelectMenu
               className="h-6"
               maxSelections={1}
-              options={equipments.map((e) => ({ id: e.equipment_id, label: e.equipment_name }))}
+              options={equipments.map((e) => ({
+                id: e.equipment_id,
+                label: e.equipment_name,
+              }))}
               selectedOption={selectedEquip}
               setSelectedOption={setSelectedEquip}
             />
@@ -183,24 +199,20 @@ export default function Reports() {
 
       {/* Conteúdo Principal */}
       <div className="grid grid-cols-12 gap-4 mx-4">
-        
         {/* Linha 1: Cards + Gráfico Principal */}
         <div className="col-span-7 bg-white p-4 rounded shadow-lg flex flex-row">
-          <div className="flex flex-col space-y-6 w-1/4 pr-4 border-r border-gray-100">
+          <div className="flex flex-col space-y-6 w-1/4 pr-4">
             <InfoCard
               title="Entregues"
               value={metrics.completed}
-              icon={<img src={imgEntrega} className="w-6 h-6" alt="Entregues" />}
+              icon={
+                <img src={imgEntrega} className="w-6 h-6" alt="Entregues" />
+              }
             />
             <InfoCard
               title="Peças Pendentes"
               value={metrics.pending}
               icon={<img src={imgCaixa} className="w-6 h-6" alt="Pendentes" />}
-            />
-            <InfoCard
-              title="Desperdício"
-              value={0}
-              icon={<img src={imgDesperdicio} className="w-6 h-6" alt="Desperdício" />}
             />
           </div>
           <div className="w-3/4 pl-4 h-full">
@@ -210,7 +222,7 @@ export default function Reports() {
 
         {/* Linha 1: Tabela de Materiais */}
         <div className="col-span-5 h-96 bg-white p-2 rounded shadow-lg overflow-hidden flex flex-col">
-           <CascadeTable
+          <CascadeTable
             title="Detalhamento por Projeto"
             headers={["Equipamentos", "Valores"]}
             filter={dataConsumedMaterials.map((p) => p.material_name)}
@@ -223,8 +235,8 @@ export default function Reports() {
           <TotalConsumptionGraph data={dataConsumedMaterials} />
         </div>
 
-        <div className="col-span-4 bg-white p-2 rounded shadow-lg h-96 flex items-center justify-center">
-          <h1 className="text-gray-400 font-semibold">Lead Time Meta X Real (Em Breve)</h1>
+        <div className="col-span-4 bg-white rounded shadow-lg h-96 overflow-hidden">
+          <LeadTimeGraph data={leadTimeData} />
         </div>
 
         <div className="col-span-4 bg-white p-2 rounded shadow-lg h-96 overflow-y-auto">
@@ -236,7 +248,7 @@ export default function Reports() {
               department_id: data.department_id,
               department_name: data.department_name,
               // Usa operador de encadeamento opcional para segurança
-              days_late: data.total_delay_time?.days || 0, 
+              days_late: data.total_delay_time?.days || 0,
             }))}
           />
         </div>

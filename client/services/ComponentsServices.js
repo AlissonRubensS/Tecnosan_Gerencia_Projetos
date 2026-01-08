@@ -39,6 +39,23 @@ export const countStatusComponentsByProj = async (
   }
 };
 
+export const getLeadTimeVsReal = async (project_id, equipment_id, start_date, end_date) => {
+  try {
+    const response = await api.get(`/components/lead-time-comparison`, {
+      params: {
+        project_id,
+        equipment_id,
+        start_date,
+        end_date
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar comparativo de lead time", error);
+    return [];
+  }
+};
+
 export const getComponents = async () => {
   try {
     const response = await api.get("/components");

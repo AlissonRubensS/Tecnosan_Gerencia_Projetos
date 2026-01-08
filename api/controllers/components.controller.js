@@ -44,8 +44,6 @@ export const getComponentStatus = async (req, res) => {
 
 export const getComponentStatusByProj = async (req, res) => {
   try {
-    // MUDANÇA 1: Usar req.query em vez de req.params
-    // A URL será: /components/statusByProj?project_id=1&start_date=...
     const { project_id, equipment_id, start_date, end_date } = req.query;
 
     const start = new Date(start_date);
@@ -55,8 +53,6 @@ export const getComponentStatusByProj = async (req, res) => {
        return res.status(400).json({ error: "Datas inválidas" });
     }
 
-    // MUDANÇA 2: Tratamento de nulos mais limpo
-    // O axios remove undefined automaticamente, mas garantimos aqui
     const projIdParam = project_id ? project_id : null;
     const equipIdParam = equipment_id ? equipment_id : null;
 
@@ -78,10 +74,48 @@ export const getComponentStatusByProj = async (req, res) => {
       [projIdParam, equipIdParam, start_date, end_date]
     );
 
-    // MUDANÇA 3: NÃO RETORNE 404. Retorne lista vazia [].
-    // Gráficos precisam receber array vazio para limpar a tela, não erro.
     if (response.rowCount === 0) {
       return res.status(200).json([]); 
+    }
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getLeadTimeComparison = async (req, res) => {
+  try {
+    const { project_id, equipment_id, start_date, end_date } = req.query;
+
+    const projIdParam = project_id ? project_id : null;
+    const equipIdParam = equipment_id ? equipment_id : null;
+
+    const response = await pool.query(
+      `SELECT 
+        C.COMPONENT_ID,
+        C.COMPONENT_NAME,
+        E.EQUIPMENT_NAME,
+        COALESCE(CR.MAN_HOURS, 0) AS META_HOURS,
+        COALESCE(C.TOTAL_TIME_SPENT, 0) AS REAL_HOURS
+      FROM COMPONENTS C
+      LEFT JOIN COMPONENT_RECIPES CR ON CR.COMPONENT_RECIPE_ID = C.COMPONENT_RECIPE_ID
+      LEFT JOIN EQUIPMENTS E ON E.EQUIPMENT_ID = C.EQUIPMENT_ID
+      LEFT JOIN PROJECTS P ON P.PROJECT_ID = E.PROJECT_ID
+      WHERE 
+        ($1::int IS NULL OR P.PROJECT_ID = $1::int) AND
+        ($2::int IS NULL OR E.EQUIPMENT_ID = $2::int) AND
+        C.START_DATE >= $3 AND 
+        (C.COMPLETION_DATE <= $4 OR C.DEADLINE <= $4)
+      ORDER BY 
+        (COALESCE(C.TOTAL_TIME_SPENT, 0) - COALESCE(CR.MAN_HOURS, 0)) DESC -- Ordena pelos maiores desvios
+      `,
+      [projIdParam, equipIdParam, start_date, end_date]
+    );
+
+    if (response.rowCount === 0) {
+      return res.status(200).json([]);
     }
 
     res.status(200).json(response.rows);
