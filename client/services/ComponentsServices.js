@@ -28,10 +28,10 @@ export const countStatusComponentsByProj = async (
         project_id,
         equipment_id,
         start_date,
-        end_date
-      }
+        end_date,
+      },
     });
-    
+
     return response.data;
   } catch (error) {
     console.error("Erro ao contar status dos componentes", error);
@@ -39,15 +39,20 @@ export const countStatusComponentsByProj = async (
   }
 };
 
-export const getLeadTimeVsReal = async (project_id, equipment_id, start_date, end_date) => {
+export const getLeadTimeVsReal = async (
+  project_id,
+  equipment_id,
+  start_date,
+  end_date
+) => {
   try {
     const response = await api.get(`/components/lead-time-comparison`, {
       params: {
         project_id,
         equipment_id,
         start_date,
-        end_date
-      }
+        end_date,
+      },
     });
     return response.data;
   } catch (error) {
@@ -135,6 +140,23 @@ export const updateComponents = async (
     return response.data;
   } catch (error) {
     console.log("Erro no service", error);
+  }
+};
+
+export const updateDate = async (component_id, start_date, deadline) => {
+  try {
+    if (!component_id || (!start_date && !deadline)) {
+      console.error("Faltando dados");
+      return [];
+    }
+    const response = await api.put(`/date/${component_id}`, {
+      start_date,
+      deadline,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Erro no service", error);
   }
 };
 

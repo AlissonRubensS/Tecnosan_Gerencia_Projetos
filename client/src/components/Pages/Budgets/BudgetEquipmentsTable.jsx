@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { VerifyAuth } from "@services/AuthService.js";
+
 import {
   vwEquipmentRecipesMaterialSummary,
   vwComponentRecipeMaterialsSummary,
 } from "@services/ViewsService.js";
+
+// Importação do serviço
+import { updateDates } from "@services/EquipRecipeCompRecipe";
 
 const formatDate = (timestamp) => {
   if (!timestamp) return "-";
@@ -18,6 +21,16 @@ const formatDate = (timestamp) => {
   }).format(date);
 };
 
+const formatForInput = (timestamp) => {
+  if (!timestamp) return "";
+  try {
+    return new Date(timestamp).toISOString().split("T")[0];
+  } catch (error) {
+    console.log(error);
+    return "";
+  }
+};
+
 function BudgetEquipmentTable({
   currentBudget,
   searchTerm = "",
@@ -26,25 +39,83 @@ function BudgetEquipmentTable({
 }) {
   const [equipmentsRecipesSummary, setEquipmentsRecipesSummary] = useState([]);
   const [componentsRecipesSummary, setComponentsRecipesSummary] = useState([]);
-
   const [rowsExpands, setRowsExpand] = useState([]);
+
+  // Estado para armazenar alterações locais (Input Controlado)
+  const [modifiedData, setModifiedData] = useState({});
 
   useEffect(() => {
     const loadData = async () => {
-      await VerifyAuth();
+      const [equipmentsSummaryData, componentsSummaryData] = await Promise.all([
+        vwEquipmentRecipesMaterialSummary(currentBudget.id),
+        vwComponentRecipeMaterialsSummary(currentBudget.id),
+      ]);
 
-      const equipmentsSummaryData = await vwEquipmentRecipesMaterialSummary(
-        currentBudget.id
-      );
       setEquipmentsRecipesSummary(equipmentsSummaryData);
-
-      const componentsSummaryData = await vwComponentRecipeMaterialsSummary(
-        currentBudget.id
-      );
       setComponentsRecipesSummary(componentsSummaryData);
     };
     loadData();
   }, [currentBudget]);
+
+  // Atualiza o estado visual enquanto o usuário digita
+  const handleInputChange = (componentId, field, value) => {
+    setModifiedData((prev) => ({
+      ...prev,
+      [componentId]: {
+        ...prev[componentId],
+        [field]: value,
+      },
+    }));
+  };
+
+  // --- FUNÇÃO DE SALVAMENTO (ATUALIZAÇÃO PARCIAL) ---
+  const handleDateSave = async (
+    equipment_recipe_id,
+    component_recipe_id,
+    type
+  ) => {
+    // 1. Pega o valor que está no estado (o que o usuário acabou de digitar/sair)
+    const newValue = modifiedData[component_recipe_id]?.[type];
+
+    // Se não houver valor alterado no estado para esse campo, não faz nada
+    if (!newValue) return;
+
+    try {
+      console.log(
+        `Salvando Parcial... Equip: ${equipment_recipe_id}, Comp: ${component_recipe_id}, Alterando: ${type} para ${newValue}`
+      );
+
+      // 2. Define os payloads.
+      // Como o backend aceita atualização parcial, enviamos apenas o que mudou.
+      // O outro campo vai como null (ou undefined) para que o backend o ignore.
+      const startToSend = type === "start" ? newValue : null;
+      const endToSend = type === "end" ? newValue : null;
+
+      // 3. Chama o serviço
+      await updateDates(
+        equipment_recipe_id,
+        component_recipe_id,
+        startToSend,
+        endToSend
+      );
+
+      console.log("Data atualizada com sucesso!");
+      
+    } catch (error) {
+      console.error("Erro ao salvar data:", error);
+      alert("Erro ao salvar a data no cronograma.");
+    }
+  };
+
+  const getInputValue = (componentId, field, originalDate) => {
+    if (
+      modifiedData[componentId] &&
+      modifiedData[componentId][field] !== undefined
+    ) {
+      return modifiedData[componentId][field];
+    }
+    return formatForInput(originalDate);
+  };
 
   return (
     <table className="w-full project-equipments text-center">
@@ -92,13 +163,11 @@ function BudgetEquipmentTable({
                             equip?.equipment_recipe_id,
                           ]);
                         } else {
-                          setRowsExpand(() => {
-                            setRowsExpand(
-                              rowsExpands?.filter(
-                                (row) => row != equip?.equipment_recipe_id
-                              )
-                            );
-                          });
+                          setRowsExpand((prev) =>
+                            prev.filter(
+                              (row) => row != equip?.equipment_recipe_id
+                            )
+                          );
                         }
                       }}
                     >
@@ -139,11 +208,65 @@ function BudgetEquipmentTable({
 
                       const bg_color =
                         index % 2 == 0 ? "bg-gray-50" : "bg-gray-100";
+
                       return (
                         <tr key={comp.component_recipe_id} className={bg_color}>
                           <td colSpan={2}>{comp.recipe_name}</td>
-                          <td> {formatDate(comp_tasks?.planned_start_at)} </td>
-                          <td> {formatDate(comp_tasks?.planned_end_at)} </td>
+
+                          {/* INPUT DE INÍCIO */}
+                          <td>
+                            <input
+                              type="date"
+                              className="bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full cursor-pointer hover:bg-white text-center"
+                              value={getInputValue(
+                                comp.component_recipe_id,
+                                "start",
+                                comp_tasks?.planned_start_at
+                              )}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  comp.component_recipe_id,
+                                  "start",
+                                  e.target.value
+                                )
+                              }
+                              onBlur={() =>
+                                handleDateSave(
+                                  equip.equipment_recipe_id,
+                                  comp.component_recipe_id,
+                                  "start"
+                                )
+                              }
+                            />
+                          </td>
+
+                          {/* INPUT DE FIM */}
+                          <td>
+                            <input
+                              type="date"
+                              className="bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full cursor-pointer hover:bg-white text-center"
+                              value={getInputValue(
+                                comp.component_recipe_id,
+                                "end",
+                                comp_tasks?.planned_end_at
+                              )}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  comp.component_recipe_id,
+                                  "end",
+                                  e.target.value
+                                )
+                              }
+                              onBlur={() =>
+                                handleDateSave(
+                                  equip.equipment_recipe_id,
+                                  comp.component_recipe_id,
+                                  "end"
+                                )
+                              }
+                            />
+                          </td>
+
                           <td>{comp.resina}</td>
                           <td>{comp.roving}</td>
                           <td>{comp.tecido_kg}</td>

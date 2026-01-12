@@ -36,8 +36,8 @@ export async function Register(req, res) {
 
 // função de login
 export async function Login(req, res) {
-  const { email, pass } = req.body;
   try {
+    const { email, pass } = req.body;
     const response = await pool.query("SELECT * FROM Users");
 
     if (response.rowCount == 0) {
@@ -51,7 +51,7 @@ export async function Login(req, res) {
     const token = jwt.sign(user, process.env.JWT_SECRET, {
       expiresIn: "12h",
     });
-    res.status(200).json({token});
+    res.status(200).json({ token });
   } catch (error) {
     console.error("Error: ", error);
     res.status(500).json({ error: error.message });
@@ -66,6 +66,35 @@ export async function VerifyAuth(req, res) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     res.json(decoded);
+  } catch (error) {
+    console.error("Error: ", error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export async function updatePassword(req, res) {
+  try {
+    const { user_id } = req.params;
+    const { pass } = req.body;
+
+    if (!user_id || !pass) {
+      throw new Error("Faltando dados");
+    }
+
+    // Fazendo Hash da senha
+    const randowSalt = randomInt(10, 16);
+    const hashingPass = await hash(pass.trim(), randowSalt);
+
+    // Criando a conta com esse Hash
+    const response = await pool.query(
+      `UPDATE Users SET password = $1 WHERE user_id = $2 RETURNING *`,
+      [hashingPass, user_id]
+    );
+
+    const token = jwt.sign(response.rows[0], process.env.JWT_SECRET, {
+      expiresIn: "12h",
+    });
+    res.status(200).json({ token });
   } catch (error) {
     console.error("Error: ", error);
     res.status(500).json({ error: error.message });

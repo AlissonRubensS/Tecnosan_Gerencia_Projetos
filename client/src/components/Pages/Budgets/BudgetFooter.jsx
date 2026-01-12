@@ -9,7 +9,6 @@ import AlertModal from "../../Ui/AlertModal";
 export default function BudgetFooter({ currentBudget }) {
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
-
   const handleSubmit = async (project_name, project_local, budget_id) => {
     try {
       const user = await VerifyAuth();

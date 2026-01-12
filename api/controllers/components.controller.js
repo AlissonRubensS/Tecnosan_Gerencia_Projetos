@@ -49,8 +49,13 @@ export const getComponentStatusByProj = async (req, res) => {
     const start = new Date(start_date);
     const end = new Date(end_date);
 
-    if (!start_date || !end_date || isNaN(start.getTime()) || isNaN(end.getTime())) {
-       return res.status(400).json({ error: "Datas inválidas" });
+    if (
+      !start_date ||
+      !end_date ||
+      isNaN(start.getTime()) ||
+      isNaN(end.getTime())
+    ) {
+      return res.status(400).json({ error: "Datas inválidas" });
     }
 
     const projIdParam = project_id ? project_id : null;
@@ -75,7 +80,7 @@ export const getComponentStatusByProj = async (req, res) => {
     );
 
     if (response.rowCount === 0) {
-      return res.status(200).json([]); 
+      return res.status(200).json([]);
     }
 
     res.status(200).json(response.rows);
@@ -259,5 +264,31 @@ export const deleteComponent = async (req, res) => {
     res.status(200).json(response.rows);
   } catch (error) {
     res.status(500).json({ error: error.menssage });
+  }
+};
+
+export const updateDate = async (req, res) => {
+  try {
+    const { component_id } = req.params;
+    const { start_date, deadline } = req.body;
+
+    if (!component_id || (!start_date && !deadline)) {
+      res.status(400).json({ message: "Faltando dados" });
+      throw new Error("Faltando dados");
+    }
+
+    await pool.query(
+      `
+      UPDATE COMPONENTS SET 
+	      START_DATE = COALESCE($1, START_DATE),
+	      DEADLINE = COALESCE($2, DEADLINE)
+      WHERE COMPONENT_ID = $3`,
+      [start_date, deadline, component_id]
+    );
+
+    res.status(200).json({ message: "Data atualizada com sucesso" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.menssage });
   }
 };

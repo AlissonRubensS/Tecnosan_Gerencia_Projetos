@@ -81,6 +81,45 @@ export const updateEquipRecipeCompRecipe = async (req, res) => {
   }
 };
 
+export const updateDates = async (req, res) => {
+  try {
+    const { equipment_recipe_id, component_recipe_id } = req.params;
+    const { planned_start_at, planned_end_at } = req.body;
+
+    if (
+      !equipment_recipe_id ||
+      !component_recipe_id ||
+      (!planned_start_at && !planned_end_at)
+    ) {
+      res.status(400).json({ message: "Faltando dados" });
+      throw new Error("Faltando dados");
+    }
+
+    const response = await pool.query(
+      `UPDATE EQUIPMENT_RECIPES_COMPONENT_RECIPES SET 
+        planned_start_at = COALESCE($1, planned_start_at),
+        planned_end_at = COALESCE($2, planned_end_at)
+      WHERE equipment_recipe_id = $3 AND component_recipe_id = $4`,
+      [
+        planned_start_at,
+        planned_end_at,
+        equipment_recipe_id,
+        component_recipe_id,
+      ]
+    );
+    response.rowCount > 0
+      ? res.status(200).json(response.rows)
+      : res
+          .status(404)
+          .json({ error: "Não foi possivel encontrar a relação na tebela" });
+  } catch (error) {
+    console.error(error)
+    res
+      .status(500)
+      .json({ error: "Error ao atualizar receita do equipamento" + error });
+  }
+};
+
 export const deleteEquipRecipeCompRecipe = async (req, res) => {
   try {
     const { equipment_recipe_id, component_recipe_id } = req.params;

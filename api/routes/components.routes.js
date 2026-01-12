@@ -6,7 +6,8 @@ import {
   updateComponents,
   deleteComponent,
   getComponentStatusByProj,
-  getLeadTimeComparison
+  getLeadTimeComparison,
+  updateDate
 } from "../controllers/components.controller.js";
 
 const router = Router();
@@ -17,6 +18,7 @@ router.get("/lead-time-comparison", getLeadTimeComparison);
 router.get("/", getComponents);
 router.post("/", createComponents);
 router.put("/:component_id", updateComponents);
+router.put("/date/:component_id", updateDate);
 router.delete("/", deleteComponent);
 
 export default router;

@@ -66,6 +66,36 @@ export const updateEquipRecipeCompRecipe = async (
   }
 };
 
+export const updateDates = async (
+  equipment_recipe_id,
+  component_recipe_id,
+  planned_start_at,
+  planned_end_at
+) => {
+  try {
+    if (
+      !equipment_recipe_id ||
+      !component_recipe_id ||
+      (!planned_start_at && !planned_end_at)
+    ) {
+      throw new Error("Faltando dados");
+    }
+
+    const response = await api.put(
+      `/equip-recipe-comp-recipe/dates/${equipment_recipe_id}/${component_recipe_id}`,
+      {
+        planned_start_at,
+        planned_end_at,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error na requisição:", error);
+    throw error;
+  }
+};
+
 export const deleteEquipRecipeCompRecipe = async (
   equipment_recipe_id,
   component_recipe_id

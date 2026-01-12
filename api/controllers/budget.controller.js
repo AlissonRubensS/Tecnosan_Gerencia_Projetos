@@ -60,7 +60,7 @@ export const uploadStatusBudget = async (req, res) => {
       res.status(400).json({ message: "Faltando dados" });
       throw new Error({ message: "Faltando dados" });
     }
-
+    
     const response = await pool.query(
       `UPDATE Budgets SET status = $1 WHERE budget_id = $2`,
       [status, budget_id]

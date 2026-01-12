@@ -4,14 +4,13 @@ export const createBudgetsEquipRecipes = async (req, res) => {
   try {
     const { budget_id, equipment_id, quantity_plan } = req.body;
     const response = await pool.query(
-      "INSERT INTO budgets_equipments_recipes(budget_id, equipment_id, quantity_plan) VALUES ($1$2$3)",
+      "INSERT INTO budgets_equipments_recipes(budget_id, equipment_recipe_id, quantity_plan) VALUES ($1,$2,$3)",
       [budget_id, equipment_id, quantity_plan]
     );
     res.status(200).json(response.rows);
   } catch (error) {
-    res.status(500).json({
-      error: "Error ao criar ligação receita do componente a orçamento" + error,
-    });
+    console.error(error);
+    res.status(500).json({ error: error.message });
   }
 };
 

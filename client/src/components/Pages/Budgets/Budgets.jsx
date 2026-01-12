@@ -54,16 +54,17 @@ function Budgets() {
           addLabel="+ Novo Orçamento"
           titleAll="Todos os Orçamentos"
           filterOptions={[
-            { value: "Running", label: "Executando" },
-            { value: "Completed", label: "Concluído" },
+            { value: "Em Planejamento", label: "Em Planejamento" },
+            { value: "Aprovado", label: "Aprovado" },
+            { value: "Arquivado", label: "Arquivado" },
           ]}
         />
       }
-      header={<BudgetHeader currentBudget={selectedBudget}/>}
+      header={<BudgetHeader currentBudget={selectedBudget} />}
     >
       <div className="flex flex-col gap-4">
         <BudgetsMain currentBudget={selectedBudget} />
-        <BudgetFooter currentBudget={selectedBudget}/>
+        <BudgetFooter currentBudget={selectedBudget} />
       </div>
 
       {isAddBudgetModalOpen && (
