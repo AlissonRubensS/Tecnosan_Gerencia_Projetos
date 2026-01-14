@@ -123,10 +123,11 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
   useEffect(() => {
     const loadData = async () => {
       const user = await VerifyAuth();
-      const summary_data = await vwProjectMaterialsSummary(user.user_id);
+      const [summary_data, status_data] = await Promise.all([
+        vwProjectMaterialsSummary(user.user_id),
+        vwSummaryStatus(),
+      ]);
       setProjectsSummary(summary_data);
-
-      const status_data = await vwSummaryStatus();
       setSummaryStatus(status_data);
     };
     loadData();
@@ -176,6 +177,9 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
           const total_value = sumEquipmentValue(equip_totals);
           const time = times?.equipments?.[equip.equipment_id] || {};
           const expanded = isExpanded(rowsExpands, equip.equipment_id);
+          const found = summaryStatus?.equipments?.find(
+            (e) => e.equipment_id == equip.equipment_id
+          );
 
           return (
             <React.Fragment key={equip.equipment_id}>
@@ -201,22 +205,10 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
                     />
                   </button>
                 </th>
-
                 <th>{equip.equipment_name}</th>
                 <th>{formatDateTime(time.start_date)}</th>
                 <th>{formatDateTime(time.end_date)}</th>
-                <th>
-                  {summaryStatus?.equipments?.find(
-                    (e) => e.equipment_id == equip.equipment_id
-                  )
-                    ? statusLabel(
-                        summaryStatus.equipments.find(
-                          (e) => e.equipment_id == equip.equipment_id
-                        ).status
-                      )
-                    : ""}
-                </th>
-
+                <th>{statusLabel(found?.status)}</th>
                 {renderMaterialColumns(equip_totals)}
                 <th>{total_value}</th>
                 <th>{time.total_hours}</th>

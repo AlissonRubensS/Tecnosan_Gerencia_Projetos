@@ -7,12 +7,14 @@ import {
   deleteComponent,
   getComponentStatusByProj,
   getLeadTimeComparison,
-  updateDate
+  updateDate,
+  getStatus
 } from "../controllers/components.controller.js";
 
 const router = Router();
 
-router.get("/status/:project_id/:equipment_id/:start_date/:end_date", getComponentStatus);
+router.get("/status/:project_id/:equipment_id/:start_date/:end_date", getComponentStatus); 
+router.get("/status", getStatus); 
 router.get("/statusByProj", getComponentStatusByProj);
 router.get("/lead-time-comparison", getLeadTimeComparison);
 router.get("/", getComponents);

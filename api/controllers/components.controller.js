@@ -90,6 +90,26 @@ export const getComponentStatusByProj = async (req, res) => {
   }
 };
 
+export const getStatus = async (req, res) => {
+  try {
+    const response = await pool.query(`
+    SELECT 
+      component_id,
+      status
+    FROM COMPONENTS;`);
+
+    if (response.rowCount == 0) {
+      res.status(404).json({ message: "Nenhum componente cadastrado" });
+      throw new Error("Nehum componente cadastrado");
+    }
+
+    res.status(200).json(response.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.menssage });
+  }
+};
+
 export const getLeadTimeComparison = async (req, res) => {
   try {
     const { project_id, equipment_id, start_date, end_date } = req.query;

@@ -15,9 +15,7 @@ export const vwProjectMaterialsSummary = async (user_id) => {
 
 export const totalMaterialsProjects = async (user_id) => {
   try {
-    const response = await api.get(
-      `/vwSummary/projects-materials/${user_id}`
-    );
+    const response = await api.get(`/vwSummary/projects-materials/${user_id}`);
     return response.data;
   } catch (error) {
     console.error(
@@ -87,15 +85,15 @@ export const vwTotalProjectsMaterials = async (user_id) => {
 
 export const vwSummaryStatus = async () => {
   try {
-    const responseComponentStatus = await api.get(
-      "http://localhost:3001/components/status"
-    );
-    const responseEquipmentStatus = await api.get(
-      `/vwSummary/status/equipments/`
-    );
-    const responseProjectsStatus = await api.get(
-      `/vwSummary/status/projects/`
-    );
+    const [
+      responseComponentStatus,
+      responseEquipmentStatus,
+      responseProjectsStatus,
+    ] = await Promise.all([
+      api.get(`/components/status`),
+      api.get(`/vwSummary/status/equipments/`),
+      api.get(`/vwSummary/status/projects/`),
+    ]);
 
     if (
       !responseComponentStatus ||
@@ -106,11 +104,12 @@ export const vwSummaryStatus = async () => {
       return undefined;
     }
 
-    return {
+    const aux = {
       components: responseComponentStatus.data,
       equipments: responseEquipmentStatus.data,
       projects: responseProjectsStatus.data,
     };
+    return aux;
   } catch (error) {
     console.error("Erro no service", error);
     return [];

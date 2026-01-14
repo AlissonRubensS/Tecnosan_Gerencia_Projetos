@@ -12,6 +12,7 @@ export default function BudgetFooter({ currentBudget }) {
   const handleSubmit = async (project_name, project_local, budget_id) => {
     try {
       const user = await VerifyAuth();
+      
       await createProject(
         user.user_id,
         project_name,

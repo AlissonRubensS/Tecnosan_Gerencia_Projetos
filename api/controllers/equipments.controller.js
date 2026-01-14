@@ -20,3 +20,11 @@ export const listEquipments = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const createEquipment = async (req, res) => {
+  try {
+    
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -19,3 +19,11 @@ export const listEquipments = async () => {
     console.error("Error fetching equipments", error);
   }
 };
+
+// export const createEquipment = async () => {
+//   try {
+//     const response = await api.post("/equipments");
+//   } catch (error) {
+//     console.error(error);
+//   }
+// };

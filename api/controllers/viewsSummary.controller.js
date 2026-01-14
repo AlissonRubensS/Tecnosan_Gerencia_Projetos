@@ -1,4 +1,3 @@
-import { async } from "postcss-js";
 import { pool } from "../config/db.js";
 
 function buildHierarchy(rows) {
