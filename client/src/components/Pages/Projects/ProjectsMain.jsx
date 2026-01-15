@@ -15,13 +15,13 @@ import {
   createEquipmentRecipe,
 } from "@services/EquipmentRecipesService.js";
 
-const viewLoader = (currentProject, searchTerm, times, view) => {
+const viewLoader = (currentProject, searchTerm, times, view, onRefresh) => {
   if (!currentProject) return <h1>Escolha um projeto</h1>;
 
   switch (view) {
     case "equipments":
       return (
-        <ProjectEquipmentsTable searchTerm={searchTerm} times={times ?? {}} />
+        <ProjectEquipmentsTable searchTerm={searchTerm} times={times ?? {}} onRefresh={onRefresh}/>
       );
     case "timeline":
       return <ProjectTimeline searchTerm={searchTerm} times={times ?? {}} />;
@@ -40,7 +40,7 @@ const btnView = (view, setView, label, text) => {
   }
 };
 
-export default function ProjectsMain({ times }) {
+export default function ProjectsMain({ times, onRefresh }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalVisible, setModalVible] = useState(false);
   const [recipes, setRecipes] = useState([]);
@@ -106,7 +106,7 @@ export default function ProjectsMain({ times }) {
           </div>
         </div>
 
-        {viewLoader(currentProject, searchTerm, times, view)}
+        {viewLoader(currentProject, searchTerm, times, view, onRefresh)}
       </main>
       <NewEquipmentModal
         isVisible={modalVisible}

@@ -29,17 +29,18 @@ function Projects() {
   const [times, setTimes] = useState({});
 
   const navigate = useNavigate();
+  
+  async function loadData() {
+    const user = await VerifyAuth();
+    const [project_data, hours_data] = await Promise.all([
+      listProjects(user.user_id),
+      await getTimesCascade(),
+    ]);
+    if (project_data) setProjects(project_data);
+    if (hours_data) setTimes(hours_data);
+  }
 
   useEffect(() => {
-    async function loadData() {
-      const user = await VerifyAuth();
-      const [project_data, hours_data] = await Promise.all([
-        listProjects(user.user_id),
-        await getTimesCascade(),
-      ]);
-      if (project_data) setProjects(project_data);
-      if (hours_data) setTimes(hours_data);
-    }
     loadData();
   }, []);
 
@@ -83,7 +84,7 @@ function Projects() {
     >
       {/* O conteúdo principal (que estava dentro de ProjectsMain e Footer) */}
       <div className="flex flex-col gap-4">
-        <ProjectsMain times={times} />
+        <ProjectsMain times={times} onRefresh={loadData} />
 
         <ProjectsFooter />
       </div>

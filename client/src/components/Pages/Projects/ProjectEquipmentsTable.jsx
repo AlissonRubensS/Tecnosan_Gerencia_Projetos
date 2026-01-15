@@ -14,7 +14,7 @@ import { formatDateForInput } from "@utils/dateUtils.js";
 
 import SelectMenu from "../../Ui/SelectMenu.jsx";
 
-// --- Funções Auxiliares ---
+// --- Funções Auxiliares (INTOCADAS) ---
 function TotalEquipmentMaterial(equipment) {
   if (!equipment?.components) return {};
   const totals = {};
@@ -66,27 +66,23 @@ function renderMaterialColumns(
 
 function statusLabel(status) {
   switch (status) {
-    case "Pending":
-      return "Pendente";
-    case "Completed":
-      return "Concluído";
-    case "Running":
-      return "Em Andamento";
-    case "Delayed":
-      return "Atrasado";
-    case "Failed":
-      return "Não Concluído";
-    default:
-      return "Sem Status";
+    case "Pending": return "Pendente";
+    case "Completed": return "Concluído";
+    case "Running": return "Em Andamento";
+    case "Delayed": return "Atrasado";
+    case "Failed": return "Não Concluído";
+    default: return "Sem Status";
   }
 }
 
+// --- Renderização dos Componentes ---
 function renderComponentRow(
   components,
   compTimes,
   statusComponents,
   onStatusChange,
-  onDateChange
+  onDateChange,
+  updatingId // <--- Parametro para controle visual
 ) {
   const statusOptions = [
     { id: "Pending", label: "Pendente" },
@@ -97,17 +93,20 @@ function renderComponentRow(
     { id: "No Status", label: "Sem Status" },
   ];
   return components.map((comp, index) => {
-    // Define cor
     const bg_color = index % 2 === 0 ? "bg-gray-50" : "bg-gray-100";
-
-    // Seleciona o tempo daquele componente
     const time = compTimes[comp?.component_id] || {};
 
-    // Seleciona o status daquele componente
     const rawStatus = statusComponents?.find(
       (c) => c.component_id === comp.component_id
     )?.status;
     const currentStatusId = rawStatus || "No Status";
+
+    // Lógica visual: Se for o ID atualizando, usa borda amarela. Se não, usa a transparente original.
+    const isSaving = updatingId === comp.component_id;
+    // Aqui garantimos que o estilo original é preservado quando não está salvando
+    const currentBorder = isSaving 
+        ? "border-yellow-500 bg-yellow-50" 
+        : "border-transparent hover:border-gray-300";
 
     return (
       <tr key={comp.component_id} className={bg_color}>
@@ -120,14 +119,21 @@ function renderComponentRow(
         <td>
           <input
             type="datetime-local"
-            className="bg-transparent border border-transparent hover:border-gray-300 rounded p-1 cursor-pointer w-full text-center text-xs"
+            disabled={isSaving}
+            // Concatenando a borda dinâmica com suas classes originais
+            className={`bg-transparent border ${currentBorder} rounded p-1 cursor-pointer w-full text-center text-xs`}
+            
+            // KEY: Fundamental para o React saber que o valor mudou vindo do banco
+            key={`date-${comp.component_id}-${time.real_end}`}
+            
             defaultValue={formatDateForInput(time.real_end)}
+            
             onBlur={(e) => {
-              if (e.target.value)
-                onDateChange(
-                  comp.component_id,
-                  e.target.value
-                );
+              const currentVal = formatDateForInput(time.real_end);
+              // Só dispara se o valor for diferente do que já está na tela
+              if (e.target.value && e.target.value !== currentVal) {
+                onDateChange(comp.component_id, e.target.value);
+              }
             }}
           />
         </td>
@@ -165,11 +171,15 @@ function renderComponentRow(
 
 // --- Componente Principal ---
 
-function ProjectEquipmentsTable({ times, searchTerm }) {
+// ADICIONEI 'onRefresh' NAS PROPS
+function ProjectEquipmentsTable({ times, searchTerm, onRefresh }) {
   const [projectsSummary, setProjectsSummary] = useState([]);
   const [rowsExpands, setRowsExpand] = useState([]);
   const [equipmentsFilter, setEquipmentsFilter] = useState([]);
   const [summaryStatus, setSummaryStatus] = useState({});
+  
+  // Estado local para saber quem está salvando
+  const [updatingId, setUpdatingId] = useState(null);
 
   const { currentProject: project } = useContext(selectedProjectContext);
 
@@ -178,12 +188,10 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
     return projectsSummary.find((proj) => proj.project_id == project.id);
   }, [projectsSummary, project?.id]);
 
-  // Função para lidar com a mudança (Exemplo)
   const handleStatusChange = async (componentId, newStatus) => {
     try {
       setSummaryStatus((prev) => {
         if (!prev || !prev.components) return prev;
-
         return {
           ...prev,
           components: prev.components.map((comp) => {
@@ -202,17 +210,28 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
 
   const handleDateChange = async (componentId, newValue) => {
     try {
-      if (!newValue) return; // Se quiser permitir limpar, remova essa linha e trate o null
+      if (!newValue) return;
 
+      // 1. Feedback Visual ON
+      setUpdatingId(componentId);
+
+      // 2. Salva no Banco
       const formattedForDb = newValue.replace("T", " ") + ":00";
-
       await updateCompletionDate(componentId, formattedForDb);
 
-      // Opcional: Se quiser feedback visual imediato sem F5, você poderia atualizar o estado local 'times' aqui
-      // mas como combinado, o F5 resolve por enquanto.
+      // 3. Pede para o Pai recarregar os dados (Refresh Suave)
+      if (onRefresh) {
+        await onRefresh(); 
+      } else {
+        console.warn("Função onRefresh não foi passada para a tabela!");
+      }
+
     } catch (error) {
       console.error("Erro ao salvar data:", error);
-      alert("Não foi possível salvar a data. Verifique a conexão.");
+      alert("Não foi possível salvar a data.");
+    } finally {
+      // 4. Feedback Visual OFF
+      setUpdatingId(null);
     }
   };
 
@@ -271,10 +290,7 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
         {equipmentsFilter?.map((equip) => {
           const equip_totals = TotalEquipmentMaterial(equip);
           const total_value = sumEquipmentValue(equip_totals);
-
-          // ACESSA O OBJETO DE EQUIPAMENTOS DO SEU JSON (Se precisar)
           const equipTime = times?.equipments?.[equip.equipment_id] || {};
-
           const expanded = isExpanded(rowsExpands, equip.equipment_id);
           const found = summaryStatus?.equipments?.find(
             (e) => e.equipment_id == equip.equipment_id
@@ -308,7 +324,8 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
                   times?.components || {},
                   summaryStatus.components,
                   handleStatusChange,
-                  handleDateChange
+                  handleDateChange,
+                  updatingId // Passando o ID atualizando
                 )}
             </React.Fragment>
           );
