@@ -312,6 +312,29 @@ export const updateDate = async (req, res) => {
   }
 };
 
+export const updateCompletionDate = async (req, res) => {
+  try {
+    const { component_id } = req.params;
+    const { completion_date } = req.body;
+
+    if (!component_id || !completion_date) {
+      return res.status(401).json({ message: "Faltando dados" });
+    }
+    await pool.query(
+      `
+      UPDATE COMPONENTS SET 
+	      COMPLETION_DATE = COALESCE($1, COMPLETION_DATE)
+      WHERE COMPONENT_ID = $2`,
+      [completion_date, component_id]
+    );
+
+    res.status(200).json({ message: "Data atualizada com sucesso" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.menssage });
+  }
+};
+
 export const updateStatus = async (req, res) => {
   try {
     const { component_id } = req.params;

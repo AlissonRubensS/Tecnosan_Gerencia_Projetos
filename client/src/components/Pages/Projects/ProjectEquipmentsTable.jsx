@@ -4,7 +4,10 @@ import {
   vwSummaryStatus,
 } from "@services/ViewsSummary.js";
 import { VerifyAuth } from "@services/AuthService.js";
-import { updateStatus } from "@services/ComponentsServices.js";
+import {
+  updateStatus,
+  updateCompletionDate,
+} from "@services/ComponentsServices.js";
 
 import { selectedProjectContext } from "@content/SeletedProject.jsx";
 import { formatDateForInput } from "@utils/dateUtils.js";
@@ -123,7 +126,6 @@ function renderComponentRow(
               if (e.target.value)
                 onDateChange(
                   comp.component_id,
-                  "completion_date",
                   e.target.value
                 );
             }}
@@ -198,12 +200,19 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
     }
   };
 
-  const handleDateChange = async (componentId, field, newValue) => {
+  const handleDateChange = async (componentId, newValue) => {
     try {
-      console.log(`Salvando ${field}: ${newValue}`);
+      if (!newValue) return; // Se quiser permitir limpar, remova essa linha e trate o null
+
+      const formattedForDb = newValue.replace("T", " ") + ":00";
+
+      await updateCompletionDate(componentId, formattedForDb);
+
+      // Opcional: Se quiser feedback visual imediato sem F5, você poderia atualizar o estado local 'times' aqui
+      // mas como combinado, o F5 resolve por enquanto.
     } catch (error) {
-      console.error("Erro ao atualizar data:", error);
-      alert("Erro ao salvar data.");
+      console.error("Erro ao salvar data:", error);
+      alert("Não foi possível salvar a data. Verifique a conexão.");
     }
   };
 
@@ -270,7 +279,6 @@ function ProjectEquipmentsTable({ times, searchTerm }) {
           const found = summaryStatus?.equipments?.find(
             (e) => e.equipment_id == equip.equipment_id
           );
-          console.log(equipTime)
           return (
             <React.Fragment key={equip.equipment_id}>
               <tr

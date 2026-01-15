@@ -160,6 +160,22 @@ export const updateDate = async (component_id, start_date, deadline) => {
   }
 };
 
+export const updateCompletionDate = async (component_id, completion_date) => {
+  try {
+    if (!component_id || !completion_date) {
+      console.error("Faltando dados");
+      return [];
+    }
+    const response = await api.put(`/components/completion/${component_id}`, {
+      completion_date
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Erro no service", error);
+  }
+};
+
 export const updateStatus = async (component_id, status) => {
   try {
     if (!component_id || !status) {

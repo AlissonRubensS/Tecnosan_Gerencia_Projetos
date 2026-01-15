@@ -9,7 +9,8 @@ import {
   getLeadTimeComparison,
   updateDate,
   updateStatus,
-  getStatus
+  getStatus,
+  updateCompletionDate
 } from "../controllers/components.controller.js";
 
 const router = Router();
@@ -22,6 +23,7 @@ router.get("/", getComponents);
 router.post("/", createComponents);
 router.put("/:component_id", updateComponents);
 router.put("/date/:component_id", updateDate);
+router.put("/completion/:component_id", updateCompletionDate);
 router.put("/status/:component_id", updateStatus);
 router.delete("/", deleteComponent);
 

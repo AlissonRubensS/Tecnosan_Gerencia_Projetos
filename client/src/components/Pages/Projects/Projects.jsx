@@ -43,8 +43,6 @@ function Projects() {
     loadData();
   }, []);
 
-  useEffect(()=>console.log(times))
-
   return (
     <DashboardLayout
       title="Projetos"
