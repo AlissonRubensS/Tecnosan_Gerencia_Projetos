@@ -37,7 +37,7 @@ export default function EditMaterialModal({ isVisible, setVisible, material }) {
       console.log(material)
 
       setMaterialValue(value || 0);
-      // setMaterialUni([uni_id.id]);
+      setMaterialUni([uni_id?.ID]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [material]);
