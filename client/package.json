@@ -20,7 +20,7 @@
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "express": "^5.1.0",
-    "jspdf": "^3.0.2",
+    "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.542.0",
     "motion": "^12.23.12",
