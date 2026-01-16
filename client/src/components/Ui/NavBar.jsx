@@ -36,13 +36,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 0 ? (
               <img
-                src="\src\imgs\blue-home-icon.png"
+                src="\imgs\blue-home-icon.png"
                 alt="icone de casa"
                 size={15}
               />
             ) : (
               <img
-                src="\src\imgs\home-icon.png"
+                src="\imgs\home-icon.png"
                 alt="icone de casa"
                 size={15}
               />
@@ -57,13 +57,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 1 ? (
               <img
-                src="\src\imgs\blue-gota-icon.png"
+                src="\imgs\blue-gota-icon.png"
                 alt="icone de casa"
                 size={15}
               />
             ) : (
               <img
-                src="\src\imgs\gota-icon.png"
+                src="\imgs\gota-icon.png"
                 alt="icone de casa"
                 size={15}
               />
@@ -78,13 +78,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 2 ? (
               <img
-                src="\src\imgs\blue-calendar-icon.png"
+                src="\imgs\blue-calendar-icon.png"
                 alt="icone de casa"
                 size={15}
               />
             ) : (
               <img
-                src="\src\imgs\calendar-icon.png"
+                src="\imgs\calendar-icon.png"
                 alt="icone de casa"
                 size={15}
               />
@@ -100,13 +100,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 3 ? (
               <img
-                src="\src\imgs\blue-report-icon.png"
+                src="\imgs\blue-report-icon.png"
                 alt="icone de prancheta"
                 size={15}
               />
             ) : (
               <img
-                src="\src\imgs\report-icon.png"
+                src="\imgs\report-icon.png"
                 alt="icone de prancheta"
                 sizes={15}
               />
@@ -123,13 +123,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 4 ? (
               <img
-                src="\src\imgs\blue-employees-icon.png"
+                src="\imgs\blue-employees-icon.png"
                 alt="icone de grupo de pessoas"
                 size={15}
               />
             ) : (
               <img
-                src="\src\imgs\employees-icon.png"
+                src="\imgs\employees-icon.png"
                 alt="icone de grupo de pessoas"
                 size={15}
               />
@@ -145,13 +145,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 5 ? (
               <img
-                src="\src\imgs\blue-recipe-icon.png"
+                src="\imgs\blue-recipe-icon.png"
                 alt="icone de grupo de pessoas"
                 size={15}
               />
             ) : (
               <img
-                src="\src\imgs\recipe-icon.png"
+                src="\imgs\recipe-icon.png"
                 alt="icone de grupo de pessoas"
                 size={15}
               />

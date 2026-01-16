@@ -75,8 +75,8 @@ function CascadeTableTwoLevel({ title, data }) {
                           <img
                             src={
                               openGroups[department]
-                                ? "src/imgs/remove-square.png"
-                                : "src/imgs/add-square.png"
+                                ? "/imgs/remove-square.png"
+                                : "/imgs/add-square.png"
                             }
                             className="h-4 w-4"
                             alt="toggle"

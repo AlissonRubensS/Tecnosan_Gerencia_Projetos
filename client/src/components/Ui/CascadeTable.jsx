@@ -161,8 +161,8 @@ function CascadeTable({ title, headers, values, filter }) {
                           <img
                             src={
                               openGroups[project]
-                                ? "src/imgs/remove-square.png"
-                                : "src/imgs/add-square.png"
+                                ? "/imgs//remove-square.png"
+                                : "/imgs/add-square.png"
                             }
                             className="h-4 w-4"
                             alt="toggle"
@@ -195,8 +195,8 @@ function CascadeTable({ title, headers, values, filter }) {
                                   <img
                                     src={
                                       openGroups[equipKey]
-                                        ? "src/imgs/remove-square.png"
-                                        : "src/imgs/add-square.png"
+                                        ? "/imgs/remove-square.png"
+                                        : "/imgs/add-square.png"
                                     }
                                     className="h-4 w-4"
                                     alt="toggle"
@@ -226,8 +226,8 @@ function CascadeTable({ title, headers, values, filter }) {
                                           <img
                                             src={
                                               openGroups[compKey]
-                                                ? "src/imgs/remove-square.png"
-                                                : "src/imgs/add-square.png"
+                                                ? "/imgs/remove-square.png"
+                                                : "/imgs/add-square.png"
                                             }
                                             className="h-4 w-4"
                                             alt="toggle"
