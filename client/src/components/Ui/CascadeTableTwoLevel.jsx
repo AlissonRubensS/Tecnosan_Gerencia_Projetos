@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
-
+import remove_square from "@imgs/remove-square.png";
+import add_square from "@imgs/add-square.png";
 function CascadeTableTwoLevel({ title, data }) {
   const [openGroups, setOpenGroups] = useState({});
 
@@ -73,8 +74,8 @@ function CascadeTableTwoLevel({ title, data }) {
                           <img
                             src={
                               openGroups[department]
-                                ? "../../imgs/remove-square.png"
-                                : "../../imgs/add-square.png"
+                                ? remove_square
+                                : add_square
                             }
                             className="h-4 w-4"
                             alt="toggle"

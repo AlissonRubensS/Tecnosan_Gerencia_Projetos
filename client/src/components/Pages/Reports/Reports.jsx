@@ -30,6 +30,9 @@ import {
   formatDateForApi,
 } from "../../../utils/dateUtils";
 
+import entrega from "@imgs/entrega.png"
+import caixa from "@imgs/caixa.png"
+
 export default function Reports() {
   // --- Estados de Filtros ---
   const defaultDates = getDefaultDateRange(3);
@@ -203,7 +206,7 @@ export default function Reports() {
               value={metrics.completed}
               icon={
                 <img
-                  src="../../../imgs/entrega.png"
+                  src={entrega}
                   className="w-6 h-6"
                   alt="Entregues"
                 />
@@ -214,7 +217,7 @@ export default function Reports() {
               value={metrics.pending}
               icon={
                 <img
-                  src="../../../imgs/caixa.png"
+                  src={caixa}
                   className="w-6 h-6"
                   alt="Pendentes"
                 />

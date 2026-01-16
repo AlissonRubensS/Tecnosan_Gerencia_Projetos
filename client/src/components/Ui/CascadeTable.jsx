@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
-
+import remove_square from "@imgs/remove-square.png";
+import add_square from "@imgs/add-square.png";
 function normalize(str) {
   return String(str ?? "")
     .trim()
@@ -173,9 +174,7 @@ function CascadeTable({ title, headers, values, filter }) {
                         <span className="flex items-center gap-2">
                           <img
                             src={
-                              openGroups[project]
-                                ? "../../imgs/remove-square.png"
-                                : "../../imgs/add-square.png"
+                              openGroups[project] ? remove_square : add_square
                             }
                             className="h-4 w-4"
                             alt="toggle"
@@ -209,8 +208,8 @@ function CascadeTable({ title, headers, values, filter }) {
                                     <img
                                       src={
                                         openGroups[equipKey]
-                                          ? "../../imgs/remove-square.png"
-                                          : "../../imgs/add-square.png"
+                                          ? remove_square
+                                          : add_square
                                       }
                                       className="h-4 w-4"
                                       alt="toggle"
@@ -244,8 +243,8 @@ function CascadeTable({ title, headers, values, filter }) {
                                               <img
                                                 src={
                                                   openGroups[compKey]
-                                                    ? "../../imgs/remove-square.png"
-                                                    : "../../imgs/add-square.png"
+                                                    ? remove_square
+                                                    : add_square
                                                 }
                                                 className="h-4 w-4"
                                                 alt="toggle"
