@@ -73,7 +73,7 @@ function NavBar({ select_index }) {
             <img
               src={select_index === 1 ? blueGotaIcon : gotaIcon}
               alt="icone de gota"
-              width={15}
+              width={select_index === 1 ? 15 : 10}
             />
             <p>Projetos</p>
           </button>

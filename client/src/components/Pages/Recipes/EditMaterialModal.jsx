@@ -32,9 +32,12 @@ export default function EditMaterialModal({ isVisible, setVisible, material }) {
       const uni_id = Unis.find(
         (unit) => unit.label?.toLowerCase() === uni?.toLowerCase()
       );
+      
+      console.log(uni_id)
+      console.log(material)
 
       setMaterialValue(value || 0);
-      setMaterialUni([uni_id.id]);
+      // setMaterialUni([uni_id.id]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [material]);

@@ -28,7 +28,14 @@ import employeesComponentsRoutes from "./routes/employees_components.routes.js";
 import componentsMaterialsRoutes from "./routes/components.materials.routes.js";
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "https://tecnosan-gerencia-projetos.vercel.app" 
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
 app.use(express.json());
 
 // rotas
