@@ -2,19 +2,6 @@ import PropTypes from "prop-types";
 import { ImExit } from "react-icons/im";
 import { useNavigate } from "react-router-dom";
 
-import BlueHomeImg from "../../imgs/blue-home-icon.png";
-import HomeImg from "../../imgs/home-icon.png";
-import BlueGotaImg from "../../imgs/blue-gota-icon.png";
-import GotaImg from "../../imgs/gota-icon.png";
-import BlueCalendarImg from "../../imgs/blue-calendar-icon.png";
-import CalendarImg from "../../imgs/calendar-icon.png";
-import BlueReportImg from "../../imgs/blue-report-icon.png";
-import ReportImg from "../../imgs/report-icon.png";
-import BlueEmployeesImg from "../../imgs/blue-employees-icon.png";
-import EmployeesImg from "../../imgs/employees-icon.png";
-import BlueRecipesImg from "../../imgs/blue-recipe-icon.png";
-import RecipesImg from "../../imgs/recipe-icon.png";
-
 function NavBar({ select_index }) {
   const navigate = useNavigate();
   const selectStyle = "text-blue-500 ";
@@ -49,13 +36,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 0 ? (
               <img
-                src={BlueHomeImg}
+                src="../../imgs/blue-home-icon.png"
                 alt="icone de casa"
                 size={15}
               />
             ) : (
               <img
-                src={HomeImg}
+                src="../../imgs/home-icon.png"
                 alt="icone de casa"
                 size={15}
               />
@@ -70,13 +57,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 1 ? (
               <img
-                src={BlueGotaImg}
+                src="../../imgs/blue-gota-icon.png"
                 alt="icone de gota"
                 size={15}
               />
             ) : (
               <img
-                src={GotaImg}
+                src="../../imgs/gota-icon.png"
                 alt="icone de gota"
                 size={15}
               />
@@ -91,13 +78,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 2 ? (
               <img
-                src={BlueCalendarImg}
+                src= "../../imgs/blue-calendar-icon.png"
                 alt="icone de projeto"
                 size={15}
               />
             ) : (
               <img
-                src={CalendarImg}
+                src="../../imgs/calendar-icon.png"
                 alt="icone de casa"
                 size={15}
               />
@@ -113,13 +100,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 3 ? (
               <img
-                src={BlueReportImg}
+                src="../../imgs/blue-report-icon.png"
                 alt="icone de prancheta"
                 size={15}
               />
             ) : (
               <img
-                src={ReportImg}
+                src="../../imgs/report-icon.png"
                 alt="icone de prancheta"
                 sizes={15}
               />
@@ -136,13 +123,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 4 ? (
               <img
-                src={BlueEmployeesImg}
+                src="../../imgs/blue-employees-icon.png"
                 alt="icone de grupo de pessoas"
                 size={15}
               />
             ) : (
               <img
-                src={EmployeesImg}
+                src="../../imgs/employees-icon.png"
                 alt="icone de grupo de pessoas"
                 size={15}
               />
@@ -158,13 +145,13 @@ function NavBar({ select_index }) {
           >
             {select_index === 5 ? (
               <img
-                src={BlueRecipesImg}
+                src="../../imgs/blue-recipe-icon.png"
                 alt="icone de receita"
                 size={15}
               />
             ) : (
               <img
-                src={RecipesImg}
+                src="../../imgs/recipe-icon.png"
                 alt="icone de receita"
                 size={15}
               />

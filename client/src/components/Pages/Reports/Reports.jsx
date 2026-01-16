@@ -30,10 +30,6 @@ import {
   formatDateForApi,
 } from "../../../utils/dateUtils";
 
-// Assets
-import imgEntrega from "../../../imgs/entrega.png";
-import imgCaixa from "../../../imgs/caixa.png";
-
 export default function Reports() {
   // --- Estados de Filtros ---
   const defaultDates = getDefaultDateRange(3);
@@ -206,13 +202,23 @@ export default function Reports() {
               title="Entregues"
               value={metrics.completed}
               icon={
-                <img src={imgEntrega} className="w-6 h-6" alt="Entregues" />
+                <img
+                  src="../../../imgs/entrega.png"
+                  className="w-6 h-6"
+                  alt="Entregues"
+                />
               }
             />
             <InfoCard
               title="Peças Pendentes"
               value={metrics.pending}
-              icon={<img src={imgCaixa} className="w-6 h-6" alt="Pendentes" />}
+              icon={
+                <img
+                  src="../../../imgs/caixa.png"
+                  className="w-6 h-6"
+                  alt="Pendentes"
+                />
+              }
             />
           </div>
           <div className="w-3/4 pl-4 h-full">

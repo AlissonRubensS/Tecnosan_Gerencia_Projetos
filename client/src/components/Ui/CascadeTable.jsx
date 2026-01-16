@@ -1,9 +1,6 @@
 import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
 
-import RemoveSquareImg from "../../imgs/remove-square.png";
-import AddSquareImg from "../../imgs/add-square.png";
-
 function normalize(str) {
   return String(str ?? "")
     .trim()
@@ -177,8 +174,8 @@ function CascadeTable({ title, headers, values, filter }) {
                           <img
                             src={
                               openGroups[project]
-                                ? RemoveSquareImg
-                                : AddSquareImg
+                                ? "../../imgs/remove-square.png"
+                                : "../../imgs/add-square.png"
                             }
                             className="h-4 w-4"
                             alt="toggle"
@@ -212,8 +209,8 @@ function CascadeTable({ title, headers, values, filter }) {
                                     <img
                                       src={
                                         openGroups[equipKey]
-                                          ? RemoveSquareImg
-                                          : AddSquareImg
+                                          ? "../../imgs/remove-square.png"
+                                          : "../../imgs/add-square.png"
                                       }
                                       className="h-4 w-4"
                                       alt="toggle"
@@ -247,8 +244,8 @@ function CascadeTable({ title, headers, values, filter }) {
                                               <img
                                                 src={
                                                   openGroups[compKey]
-                                                    ? RemoveSquareImg
-                                                    : AddSquareImg
+                                                    ? "../../imgs/remove-square.png"
+                                                    : "../../imgs/add-square.png"
                                                 }
                                                 className="h-4 w-4"
                                                 alt="toggle"
