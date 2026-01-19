@@ -10,7 +10,9 @@ import Login from "@pages/Login/Login.jsx";
 import Budgets from "@pages/Budgets/Budgets.jsx";
 import Recipes from "@pages/Recipes/Recipes.jsx";
 
-const token = sessionStorage.getItem("loginPermission");
+// Importar o novo componente Guard
+import AuthGuard from "./components/AuthGuard.jsx"; 
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -18,31 +20,61 @@ const router = createBrowserRouter([
   },
   {
     path: "/home",
-    element: token ? <Home /> : <Login />,
+    element: (
+      // Nível 3 NÃO pode entrar aqui
+      <AuthGuard restrictLevel3={true}>
+        <Home />
+      </AuthGuard>
+    ),
   },
   {
     path: "/production",
-    element: token ? <Production /> : <Login />,
+    element: (
+      // Nível 3 PODE entrar aqui (restrictLevel3={false})
+      <AuthGuard restrictLevel3={false}>
+        <Production />
+      </AuthGuard>
+    ),
   },
   {
     path: "/employees",
-    element: token ? <Employees /> : <Login />,
+    element: (
+      <AuthGuard restrictLevel3={true}>
+        <Employees />
+      </AuthGuard>
+    ),
   },
   {
     path: "/reports",
-    element: token ? <Reports /> : <Login />,
+    element: (
+      <AuthGuard restrictLevel3={true}>
+        <Reports />
+      </AuthGuard>
+    ),
   },
   {
     path: "/projects",
-    element: token ? <Projects /> : <Login />,
+    element: (
+      <AuthGuard restrictLevel3={true}>
+        <Projects />
+      </AuthGuard>
+    ),
   },
   {
     path: "/budgets",
-    element: token ? <Budgets /> : <Login />,
+    element: (
+      <AuthGuard restrictLevel3={true}>
+        <Budgets />
+      </AuthGuard>
+    ),
   },
   {
     path: "/recipes",
-    element: token ? <Recipes /> : <Login />,
+    element: (
+      <AuthGuard restrictLevel3={true}>
+        <Recipes />
+      </AuthGuard>
+    ),
   },
 ]);
 
