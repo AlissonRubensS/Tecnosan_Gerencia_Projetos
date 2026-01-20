@@ -2,10 +2,10 @@ import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import remove_square from "@imgs/remove-square.png";
 import add_square from "@imgs/add-square.png";
-function CascadeTableTwoLevel({ title, data }) {
+
+function CascadeTableTwoLevel({ data }) {
   const [openGroups, setOpenGroups] = useState({});
 
-  // 🔹 Agrupa os componentes por departamento
   const groupedData = useMemo(() => {
     const grouped = {};
     data.forEach((item) => {
@@ -19,11 +19,9 @@ function CascadeTableTwoLevel({ title, data }) {
     return grouped;
   }, [data]);
 
-  // 🔹 Abre ou fecha um grupo
   const toggleGroup = (key) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  // 🔹 Calcula total de processos e média de atraso
   const getTotals = (items) => {
     const avgDays =
       items.length > 0
@@ -33,83 +31,78 @@ function CascadeTableTwoLevel({ title, data }) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-2 text-base">
-      {/* 🔹 Cabeçalho */}
-      <div className="relative bg-sky-200 font-bold py-1 px-2 flex items-center text-base">
-        <h2 className="flex-1 text-center">{title || "Processos em Atraso"}</h2>
-      </div>
-
-      {/* 🔹 Tabela */}
-      <table className="min-w-full border-collapse text-base">
-        <thead>
-          <tr className="bg-sky-200 uppercase font-semibold ">
-            <th className="p-2 border-b border-sky-300 text-center">
-              Departamento / Componente
-            </th>
-            <th className="p-2 border-b border-sky-300 text-center">
-              Dias de Atraso
-            </th>
+    <table className="w-full border-collapse text-sm text-left">
+      <thead className="sticky top-0 z-10">
+        <tr className="bg-sky-200 uppercase font-semibold text-gray-700">
+          <th className="p-2 border-b border-sky-300">
+            Departamento / Componente
+          </th>
+          <th className="p-2 border-b border-sky-300 text-center w-32">
+            Dias de Atraso
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(groupedData).length === 0 ? (
+          <tr>
+            <td colSpan={2} className="text-center py-4 text-gray-500">
+              Nenhum processo em atraso.
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {Object.entries(groupedData).length === 0 ? (
-            <tr>
-              <td colSpan={2} className="text-center py-4 text-gray-500">
-                Nenhum processo em atraso.
-              </td>
-            </tr>
-          ) : (
-            Object.entries(groupedData).map(([department, components]) => {
-              const avgDays = getTotals(components);
-              return (
-                <React.Fragment key={department}>
-                  {/* 🔹 Departamento */}
-                  <tr className="bg-sky-100 hover:bg-sky-200 ">
-                    <td colSpan={2}>
-                      <button
-                        onClick={() => toggleGroup(department)}
-                        className="flex items-center justify-between w-full p-2 font-medium"
-                      >
-                        <span className="flex items-center gap-2">
-                          <img
-                            src={
-                              openGroups[department]
-                                ? remove_square
-                                : add_square
-                            }
-                            className="h-4 w-4"
-                            alt="toggle"
-                          />
-                          {department}
-                        </span>
-                        <span>{avgDays} dias</span>
-                      </button>
-                    </td>
-                  </tr>
+        ) : (
+          Object.entries(groupedData).map(([department, components]) => {
+            const avgDays = getTotals(components);
+            return (
+              <React.Fragment key={department}>
+                {/* 🔹 Departamento */}
+                <tr className="bg-sky-50 hover:bg-sky-100 border-b border-sky-100 transition-colors">
+                  <td colSpan={2} className="p-0">
+                    <button
+                      onClick={() => toggleGroup(department)}
+                      className="flex items-center justify-between w-full p-2 font-medium focus:outline-none"
+                    >
+                      <span className="flex items-center gap-2">
+                        <img
+                          src={
+                            openGroups[department]
+                              ? remove_square
+                              : add_square
+                          }
+                          className="h-4 w-4 opacity-70"
+                          alt="toggle"
+                        />
+                        {department}
+                      </span>
+                      <span className="font-bold">{avgDays} dias (total)</span>
+                    </button>
+                  </td>
+                </tr>
 
-                  {/* 🔹 Componentes */}
-                  {openGroups[department] &&
-                    components.map((item, i) => (
-                      <tr
-                        key={i}
-                        className="bg-white hover:bg-sky-50  border-b border-sky-100"
-                      >
-                        <td className="p-2 pl-8">{item.component_name}</td>
-                        <td className="p-2 text-center">{item.days_late}</td>
-                      </tr>
-                    ))}
-                </React.Fragment>
-              );
-            })
-          )}
-        </tbody>
-      </table>
-    </div>
+                {/* 🔹 Componentes */}
+                {openGroups[department] &&
+                  components.map((item, i) => (
+                    <tr
+                      key={i}
+                      className="bg-white hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                    >
+                      <td className="p-2 pl-9 text-gray-600 border-r border-dashed border-gray-200">
+                        {item.component_name}
+                      </td>
+                      <td className="p-2 text-center font-mono text-red-500 font-medium">
+                        {item.days_late}
+                      </td>
+                    </tr>
+                  ))}
+              </React.Fragment>
+            );
+          })
+        )}
+      </tbody>
+    </table>
   );
 }
 
 CascadeTableTwoLevel.propTypes = {
-  title: PropTypes.string,
   data: PropTypes.arrayOf(
     PropTypes.shape({
       department_name: PropTypes.string,

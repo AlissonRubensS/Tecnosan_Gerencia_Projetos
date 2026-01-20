@@ -14,9 +14,7 @@ import LeadTimeGraph from "./LeadTimeGraph";
 import { listProjects } from "@services/ProjectService";
 import { getEquipment } from "@services/EquipmentService";
 import { VerifyAuth } from "@services/AuthService";
-import {
-  countStatusComponentsByProj, // Vamos usar apenas este, que traz os dados detalhados
-} from "@services/ComponentsServices";
+import { countStatusComponentsByProj } from "@services/ComponentsServices";
 import {
   vwProjectConsumedMaterials,
   vwProjectDepartmentDelays,
@@ -43,22 +41,16 @@ export default function Reports() {
   const [equipments, setEquipments] = useState([]);
   const [dataConsumedMaterials, setDataConsumedMaterials] = useState([]);
   const [processDelaysList, setProcessDelaysList] = useState([]);
-  const [countStatusGraph, setCountStatusGraph] = useState([]); // Fonte da verdade para Gráfico e Cards
+  const [countStatusGraph, setCountStatusGraph] = useState([]); 
   const [leadTimeData, setLeadTimeData] = useState([]);
 
-  // ---------------------------------------------------------
-  // 1. LÓGICA UNIFICADA (Calcula Gráfico E Cards juntos)
-  // ---------------------------------------------------------
+  // --- Lógica de Processamento (Mantida) ---
   const { chartData, cardMetrics } = useMemo(() => {
-    // Valores iniciais
     const metrics = { completed: 0, pending: 0 };
     const equipmentMap = new Map();
 
     if (!countStatusGraph || countStatusGraph.length === 0) {
-      return { 
-        chartData: { categories: [], series: [] }, 
-        cardMetrics: metrics 
-      };
+      return { chartData: { categories: [], series: [] }, cardMetrics: metrics };
     }
 
     countStatusGraph.forEach((item) => {
@@ -66,43 +58,31 @@ export default function Reports() {
       const qtd = Number(item.numero_pecas) || 0;
       const status = (item.status || "").trim();
 
-      // --- A. Lógica para os Cards (Soma Total) ---
       if (status === "Completed") {
         metrics.completed += qtd;
       } else {
-        // Pending, Running, Failed -> Contam como Pendentes
         metrics.pending += qtd;
       }
 
-      // --- B. Lógica para o Gráfico (Agrupado por Equipamento) ---
       if (!equipmentMap.has(equipName)) {
         equipmentMap.set(equipName, { entregues: 0, pendentes: 0 });
       }
       const entry = equipmentMap.get(equipName);
 
-      if (status === "Completed") {
-        entry.entregues += qtd;
-      } else {
-        entry.pendentes += qtd;
-      }
+      if (status === "Completed") entry.entregues += qtd;
+      else entry.pendentes += qtd;
     });
 
-    // Formatação para o ApexCharts
     const categories = Array.from(equipmentMap.keys());
     const series = [
       { name: "Entregues", data: categories.map((cat) => equipmentMap.get(cat).entregues) },
       { name: "Pendentes", data: categories.map((cat) => equipmentMap.get(cat).pendentes) },
     ];
 
-    return { 
-      chartData: { categories, series }, 
-      cardMetrics: metrics 
-    };
-  }, [countStatusGraph]); // Recalcula sempre que os dados brutos mudarem
+    return { chartData: { categories, series }, cardMetrics: metrics };
+  }, [countStatusGraph]);
 
-  // ---------------------------------------------------------
-
-  // --- Buscas de Dados Iniciais ---
+  // --- Buscas (Mantidas) ---
   useEffect(() => {
     let isMounted = true;
     const fetchOptionsData = async () => {
@@ -121,7 +101,6 @@ export default function Reports() {
     return () => { isMounted = false; };
   }, []);
 
-  // --- Busca de Métricas (Ao mudar filtros) ---
   const fetchDashboardMetrics = useCallback(async () => {
     if (!currentUserId) return;
     const projId = selectedProj.length > 0 ? selectedProj[0] : null;
@@ -131,18 +110,8 @@ export default function Reports() {
       const start = formatDateForApi(startDate);
       const end = formatDateForApi(endDate);
 
-      // Removemos a chamada 'countStatusComponents' (singular) pois calculamos 
-      // os totais localmente baseados no 'countStatusComponentsByProj' (plural)
-      // para garantir consistência.
-      const [
-        graphRes,
-        // cardsRes (removido)
-        leadRes,
-        matRes,
-        delayRes
-      ] = await Promise.all([
+      const [graphRes, leadRes, matRes, delayRes] = await Promise.all([
         countStatusComponentsByProj(projId, equipId, start, end),
-        // countStatusComponents(projId, equipId, start, end), // <-- Não precisamos mais fazer essa requisição extra
         getLeadTimeVsReal(projId, equipId, start, end),
         vwProjectConsumedMaterials(currentUserId, projId, start, end),
         vwProjectDepartmentDelays(projId)
@@ -164,9 +133,17 @@ export default function Reports() {
 
   const uniqueMaterialNames = [...new Set(dataConsumedMaterials.map((p) => p.material_name))].filter(Boolean);
 
-  // --- Estilos ---
+  const customScrollbarClass = `
+    [&::-webkit-scrollbar]:w-2 
+    [&::-webkit-scrollbar]:h-2 
+    [&::-webkit-scrollbar-track]:bg-transparent 
+    [&::-webkit-scrollbar-thumb]:bg-gray-300 
+    [&::-webkit-scrollbar-thumb]:rounded-full 
+    hover:[&::-webkit-scrollbar-thumb]:bg-gray-400
+  `;
+
   const cardStyle = "bg-white p-4 rounded-lg shadow-md border-t-4 flex flex-col";
-  const scrollStyle = "overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent";
+  const tableContainerStyle = `flex-1 w-full min-h-0 overflow-auto border border-gray-100 rounded bg-gray-50/50 ${customScrollbarClass}`;
 
   return (
     <div className="min-h-screen w-full pb-16 bg-gray-50 overflow-x-hidden">
@@ -199,15 +176,13 @@ export default function Reports() {
       {/* GRID DE CONTEÚDO */}
       <div className="grid grid-cols-12 gap-6 mx-4 mb-10">
         
-        {/* LINHA 1: Evolução (Status) */}
+        {/* LINHA 1: Evolução */}
         <div className={`col-span-12 border-green-500 h-[450px] !flex-row ${cardStyle}`}>
-          {/* Esquerda: Cards (Agora usando cardMetrics calculado localmente) */}
           <div className="flex flex-col space-y-4 w-1/5 pr-6 justify-center border-r border-gray-100 shrink-0">
              <h3 className="text-gray-500 font-bold uppercase text-sm mb-2">Resumo</h3>
-             <InfoCard title="Entregues" value={cardMetrics.completed} icon={<img src={entrega} className="w-8 h-8 opacity-90" />} />
-             <InfoCard title="Pendentes" value={cardMetrics.pending} icon={<img src={caixa} className="w-8 h-8 opacity-90" />} />
+             <InfoCard title="Entregues" value={cardMetrics.completed} icon={<img src={entrega} className="w-8 h-8 opacity-90" alt="Entregues" />} />
+             <InfoCard title="Pendentes" value={cardMetrics.pending} icon={<img src={caixa} className="w-8 h-8 opacity-90" alt="Pendentes" />} />
           </div>
-          {/* Direita: Gráfico */}
           <div className="flex-1 pl-4 min-w-0 flex flex-col">
              <h3 className="text-lg font-bold text-gray-800 mb-2">Evolução por Equipamento</h3>
              <div className="flex-1 w-full min-h-0 relative">
@@ -219,7 +194,7 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* LINHA 2: Gráficos de Apoio */}
+        {/* LINHA 2: Gráficos */}
         <div className={`col-span-6 h-96 border-green-400 ${cardStyle}`}>
           <h3 className="text-base font-bold text-gray-700 mb-2">Consumo de Materiais</h3>
           <div className="flex-1 w-full min-h-0 relative">
@@ -234,31 +209,37 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* LINHA 3: Tabelas */}
+        {/* LINHA 3: Tabelas (Com Scroll Personalizado) */}
+        
+        {/* Tabela 3.1 */}
         <div className={`col-span-6 h-96 border-gray-300 ${cardStyle}`}>
-          <h3 className="text-base font-bold text-gray-700 mb-3">Detalhamento do Projeto</h3>
-          <div className={`flex-1 border border-gray-100 rounded ${scrollStyle}`}>
-             <CascadeTable
-                headers={["Equipamentos", "Valores"]}
-                filter={uniqueMaterialNames}
-                values={dataConsumedMaterials}
-            />
+          <h3 className="text-base font-bold text-gray-700 mb-3">Detalhamento Financeiro</h3>
+          <div className={tableContainerStyle}>
+             <div className="min-w-full inline-block align-top">
+               <CascadeTable
+                  headers={["Equipamentos", "Valores"]}
+                  filter={uniqueMaterialNames}
+                  values={dataConsumedMaterials}
+              />
+             </div>
           </div>
         </div>
 
+        {/* Tabela 3.2 */}
         <div className={`col-span-6 h-96 border-red-400 ${cardStyle}`}>
-          <h3 className="text-base font-bold text-gray-700 mb-3">Processos em Atraso</h3>
-          <div className={`flex-1 border border-gray-100 rounded ${scrollStyle}`}>
-             <CascadeTableTwoLevel
-                title=""
-                data={processDelaysList.map((data) => ({
-                  component_id: data.component_id,
-                  component_name: data.component_name,
-                  department_id: data.department_id,
-                  department_name: data.department_name,
-                  days_late: data.total_delay_time?.days || 0,
-                }))}
-              />
+          <h3 className="text-base font-bold text-gray-700 mb-3 text-red-600">Processos em Atraso</h3>
+          <div className={tableContainerStyle}>
+             <div className="min-w-full inline-block align-top">
+               <CascadeTableTwoLevel
+                  data={processDelaysList.map((data) => ({
+                    component_id: data.component_id,
+                    component_name: data.component_name,
+                    department_id: data.department_id,
+                    department_name: data.department_name,
+                    days_late: data.total_delay_time?.days || 0,
+                  }))}
+                />
+             </div>
           </div>
         </div>
 
