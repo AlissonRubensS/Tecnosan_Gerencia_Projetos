@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 // UI Components
 import NavBar from "../../Ui/NavBar";
@@ -30,126 +30,184 @@ import {
   formatDateForApi,
 } from "../../../utils/dateUtils";
 
-import entrega from "@imgs/entrega.png"
-import caixa from "@imgs/caixa.png"
+import entrega from "@imgs/entrega.png";
+import caixa from "@imgs/caixa.png";
 
 export default function Reports() {
   // --- Estados de Filtros ---
   const defaultDates = getDefaultDateRange(3);
   const [startDate, setStartDate] = useState(defaultDates.start);
   const [endDate, setEndDate] = useState(defaultDates.end);
-  const [selectedProj, setSelectedProj] = useState([1]);
+  
+  const [selectedProj, setSelectedProj] = useState([]);
   const [selectedEquip, setSelectedEquip] = useState([]);
+  
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   // --- Estados de Dados (Listas) ---
   const [projects, setProjects] = useState([]);
   const [equipments, setEquipments] = useState([]);
+
+  // --- Estados de Dados (Métricas) ---
   const [dataConsumedMaterials, setDataConsumedMaterials] = useState([]);
   const [processDelaysList, setProcessDelaysList] = useState([]);
-
-  // --- Estados de Métricas e Gráficos ---
-  const [countStatusGraph, setCountStatusGraph] = useState([]);
+  const [countStatusGraph, setCountStatusGraph] = useState([]); // Dados brutos
   const [metrics, setMetrics] = useState({ completed: 0, pending: 0 });
   const [leadTimeData, setLeadTimeData] = useState([]);
 
-  // 1. Dados Estáticos (Carregados uma vez)
-  const fetchStaticData = async (userId) => {
-    try {
-      const [projData, equipData, delayData, materialData] = await Promise.all([
-        listProjects(userId),
-        getEquipment(userId),
-        vwProjectDepartmentDelays(),
-        vwProjectConsumedMaterials(userId),
-      ]);
-
-      setProjects(projData || []);
-      setEquipments(equipData || []);
-      setProcessDelaysList(delayData || []);
-
-      if (Array.isArray(materialData)) {
-        setDataConsumedMaterials(materialData);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar dados iniciais:", error);
+  // ---------------------------------------------------------
+  // LÓGICA DE PROCESSAMENTO DE DADOS (Atualizada para Pending, Running, Completed, Failed)
+  // ---------------------------------------------------------
+  const evolutionChartData = useMemo(() => {
+    if (!countStatusGraph || countStatusGraph.length === 0) {
+      return { categories: [], series: [] };
     }
-  };
 
-  // 2. Dados Dinâmicos (Dependem dos filtros)
+    const equipmentMap = new Map();
+
+    countStatusGraph.forEach((item) => {
+      const equipName = item.equipment_name;
+      const qtd = Number(item.numero_pecas) || 0;
+      // Garante que a comparação seja segura (remove espaços extras)
+      const status = (item.status || "").trim();
+
+      if (!equipmentMap.has(equipName)) {
+        equipmentMap.set(equipName, { entregues: 0, pendentes: 0 });
+      }
+
+      const entry = equipmentMap.get(equipName);
+
+      // --- REGRA ATUALIZADA ---
+      // Classes do Banco: Pending, Running, Completed, Failed
+      if (status === "Completed") {
+        entry.entregues += qtd;
+      } else {
+        // Se for Pending, Running ou Failed, cai aqui
+        entry.pendentes += qtd;
+      }
+    });
+
+    const categories = Array.from(equipmentMap.keys());
+    
+    const series = [
+      {
+        name: "Entregues",
+        data: categories.map((cat) => equipmentMap.get(cat).entregues),
+      },
+      {
+        name: "Pendentes",
+        data: categories.map((cat) => equipmentMap.get(cat).pendentes),
+      },
+    ];
+
+    return { categories, series };
+  }, [countStatusGraph]);
+
+  // ---------------------------------------------------------
+
+  // 1. Carregamento Inicial
+  useEffect(() => {
+    let isMounted = true;
+    const fetchOptionsData = async () => {
+      try {
+        const user = await VerifyAuth();
+        if (!user) return;
+
+        if (isMounted) setCurrentUserId(user.user_id);
+
+        const [projData, equipData] = await Promise.all([
+          listProjects(user.user_id),
+          getEquipment(user.user_id),
+        ]);
+
+        if (isMounted) {
+          setProjects(projData || []);
+          setEquipments(equipData || []);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar opções iniciais:", error);
+      }
+    };
+    fetchOptionsData();
+    return () => { isMounted = false; };
+  }, []);
+
+  // 2. Busca de Métricas
   const fetchDashboardMetrics = useCallback(async () => {
-    const projId = selectedProj[0];
-    const equipId = selectedEquip[0];
+    if (!currentUserId) return;
 
-    if (!projId) return;
+    const projId = selectedProj.length > 0 ? selectedProj[0] : null;
+    const equipId = selectedEquip.length > 0 ? selectedEquip[0] : null;
 
     try {
       const formattedStart = formatDateForApi(startDate);
       const formattedEnd = formatDateForApi(endDate);
 
-      // Adicione a chamada do lead time no Promise.all
-      const [graphResponse, cardsResponse, leadTimeResponse] =
-        await Promise.all([
-          countStatusComponentsByProj(
-            projId,
-            equipId,
-            formattedStart,
-            formattedEnd
-          ),
-          countStatusComponents(projId, equipId, formattedStart, formattedEnd),
-          getLeadTimeVsReal(projId, equipId, formattedStart, formattedEnd), // Nova chamada
-        ]);
+      const [
+        graphResponse,
+        cardsResponse,
+        leadTimeResponse,
+        materialDataRaw,
+        delayDataRaw
+      ] = await Promise.all([
+        countStatusComponentsByProj(projId, equipId, formattedStart, formattedEnd),
+        countStatusComponents(projId, equipId, formattedStart, formattedEnd),
+        getLeadTimeVsReal(projId, equipId, formattedStart, formattedEnd),
+        vwProjectConsumedMaterials(currentUserId, projId, formattedStart, formattedEnd),
+        vwProjectDepartmentDelays(projId)
+      ]);
 
       setCountStatusGraph(graphResponse || []);
-      setLeadTimeData(leadTimeResponse || []); // Salva no estado
+      setLeadTimeData(leadTimeResponse || []);
 
       if (cardsResponse && cardsResponse[0]) {
         setMetrics({
           completed: cardsResponse[0].total_completed || 0,
           pending: cardsResponse[0].total_pending || 0,
         });
+      } else {
+        setMetrics({ completed: 0, pending: 0 });
       }
+
+      if (Array.isArray(materialDataRaw)) {
+        if (projId) {
+            const filtered = materialDataRaw.filter(m => m.project_id === projId);
+            setDataConsumedMaterials(filtered);
+        } else {
+            setDataConsumedMaterials(materialDataRaw);
+        }
+      } else {
+        setDataConsumedMaterials([]);
+      }
+
+      setProcessDelaysList(delayDataRaw || []);
+
     } catch (error) {
       console.error("Erro ao atualizar métricas:", error);
     }
-  }, [selectedProj, selectedEquip, startDate, endDate]);
+  }, [selectedProj, selectedEquip, startDate, endDate, currentUserId]);
 
-  // Load Inicial (Autenticação + Listas Básicas)
-  useEffect(() => {
-    let isMounted = true;
-
-    const init = async () => {
-      const user = await VerifyAuth();
-      if (user && isMounted) {
-        await fetchStaticData(user.user_id);
-      }
-    };
-
-    init();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Atualização dos Gráficos quando filtros mudam
   useEffect(() => {
     fetchDashboardMetrics();
   }, [fetchDashboardMetrics]);
 
-  // --- Renderização ---
+  const uniqueMaterialNames = [
+    ...new Set(dataConsumedMaterials.map((p) => p.material_name))
+  ].filter(Boolean);
 
   return (
-    <div className="h-screen w-screen space-y-4 pb-16 bg-gray-50">
+    <div className="h-screen w-screen space-y-4 pb-16 bg-gray-50 overflow-x-hidden">
       <NavBar select_index={3} />
 
-      {/* Header de Filtros */}
-      <div className="flex flex-row bg-white py-1 px-2 items-center justify-between shadow-lg mx-4 rounded">
-        <h2 className="font-bold text-lg">Dashboard</h2>
+      {/* --- HEADER DE FILTROS --- */}
+      <div className="flex flex-row bg-white py-2 px-4 items-center justify-between shadow-md mx-4 rounded-lg border-l-4 border-green-500">
+        <h2 className="font-bold text-lg text-gray-800">Dashboard</h2>
 
-        <div className="flex flex-row space-x-2 items-end">
-          {/* Filtro Projeto */}
+        <div className="flex flex-row space-x-4 items-end">
           <div>
-            <p className="text-xs text-gray-600 mb-1">Projetos</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase">Projetos</p>
             <SelectMenu
-              className="h-6"
+              className="h-7 w-40"
               maxSelections={1}
               options={projects.map((p) => ({
                 id: p.project_id,
@@ -159,12 +217,10 @@ export default function Reports() {
               setSelectedOption={setSelectedProj}
             />
           </div>
-
-          {/* Filtro Equipamento */}
           <div>
-            <p className="text-xs text-gray-600 mb-1">Equipamento</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase">Equipamento</p>
             <SelectMenu
-              className="h-6"
+              className="h-7 w-40"
               maxSelections={1}
               options={equipments.map((e) => ({
                 id: e.equipment_id,
@@ -174,20 +230,18 @@ export default function Reports() {
               setSelectedOption={setSelectedEquip}
             />
           </div>
-
-          {/* Filtro Data */}
           <div className="flex flex-col">
-            <p className="self-center text-xs text-gray-600 mb-1">Período</p>
+            <p className="self-center text-xs font-semibold text-gray-500 mb-1 uppercase">Período</p>
             <div className="flex flex-row space-x-2">
               <input
                 type="date"
-                className="bg-gray-100 p-1 rounded-md text-xs border border-gray-300"
+                className="bg-gray-50 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-700 font-medium"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
               <input
                 type="date"
-                className="bg-gray-100 p-1 rounded-md text-xs border border-gray-300"
+                className="bg-gray-50 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-700 font-medium"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -196,61 +250,72 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Conteúdo Principal */}
+      {/* --- GRID --- */}
       <div className="grid grid-cols-12 gap-4 mx-4">
+        
         {/* Linha 1: Cards + Gráfico Principal */}
-        <div className="col-span-7 bg-white p-4 rounded shadow-lg flex flex-row">
-          <div className="flex flex-col space-y-6 w-1/4 pr-4">
+        <div className="col-span-7 bg-white p-4 rounded-lg shadow-md border-t-2 border-green-100 flex flex-row">
+          <div className="flex flex-col space-y-6 w-1/4 pr-4 justify-center">
             <InfoCard
               title="Entregues"
               value={metrics.completed}
-              icon={
-                <img
-                  src={entrega}
-                  className="w-6 h-6"
-                  alt="Entregues"
-                />
-              }
+              icon={<img src={entrega} className="w-8 h-8 opacity-90" alt="Entregues" />}
             />
             <InfoCard
               title="Peças Pendentes"
               value={metrics.pending}
-              icon={
-                <img
-                  src={caixa}
-                  className="w-6 h-6"
-                  alt="Pendentes"
-                />
-              }
+              icon={<img src={caixa} className="w-8 h-8 opacity-90" alt="Pendentes" />}
             />
           </div>
           <div className="w-3/4 pl-4 h-full">
-            <ProjectEvolutionGraph data={countStatusGraph} />
+            <ProjectEvolutionGraph 
+                categories={evolutionChartData.categories}
+                series={evolutionChartData.series}
+            />
           </div>
         </div>
 
         {/* Linha 1: Tabela de Materiais */}
-        <div className="col-span-5 h-96 bg-white p-2 rounded shadow-lg overflow-hidden flex flex-col">
-          <CascadeTable
-            title="Detalhamento por Projeto"
-            headers={["Equipamentos", "Valores"]}
-            filter={dataConsumedMaterials.map((p) => p.material_name)}
-            values={dataConsumedMaterials}
-          />
+        <div className="col-span-5 h-96 bg-white p-3 rounded-lg shadow-md border-t-2 border-green-100 overflow-hidden flex flex-col">
+          <h3 className="text-sm font-bold text-gray-700 mb-2 pl-2 border-l-4 border-green-400">
+             Detalhamento por Projeto
+          </h3>
+          <div className="flex-1 overflow-hidden">
+            <CascadeTable
+                headers={["Equipamentos", "Valores"]}
+                filter={uniqueMaterialNames}
+                values={dataConsumedMaterials}
+            />
+          </div>
         </div>
 
-        {/* Linha 2: Outros Gráficos e Tabelas */}
-        <div className="col-span-4 bg-white p-2 rounded shadow-lg h-96">
-          <TotalConsumptionGraph data={dataConsumedMaterials} />
+        {/* Linha 2: Consumo Total */}
+        <div className="col-span-4 h-96 bg-white p-3 rounded-lg shadow-md border-t-2 border-green-100 flex flex-col">
+          <h3 className="text-sm font-bold text-gray-700 mb-2 pl-2 border-l-4 border-green-400 shrink-0">
+             Consumo Total
+          </h3>
+          <div className="flex-1 min-h-0 w-full">
+             <TotalConsumptionGraph data={dataConsumedMaterials} />
+          </div>
         </div>
 
-        <div className="col-span-4 bg-white rounded shadow-lg h-96 overflow-hidden">
-          <LeadTimeGraph data={leadTimeData} />
+        {/* Linha 2: Lead Time */}
+        <div className="col-span-4 h-96 bg-white p-3 rounded-lg shadow-md border-t-2 border-green-100 overflow-hidden">
+          <h3 className="text-sm font-bold text-gray-700 mb-2 pl-2 border-l-4 border-green-400">
+             Lead Time (Real vs Previsto)
+          </h3>
+          <div className="h-[90%] w-full">
+             <LeadTimeGraph data={leadTimeData} />
+          </div>
         </div>
 
-        <div className="col-span-4 bg-white p-2 rounded shadow-lg h-96 overflow-y-auto">
+        {/* Linha 2: Atrasos */}
+        <div className="col-span-4 h-96 bg-white p-3 rounded-lg shadow-md border-t-2 border-green-100 overflow-y-auto">
+          <h3 className="text-sm font-bold text-gray-700 mb-2 pl-2 border-l-4 border-red-400">
+             Processos em Atraso
+          </h3>
           <CascadeTableTwoLevel
-            title="Processos em Atraso por Departamento"
+            title=""
             data={processDelaysList.map((data) => ({
               component_id: data.component_id,
               component_name: data.component_name,

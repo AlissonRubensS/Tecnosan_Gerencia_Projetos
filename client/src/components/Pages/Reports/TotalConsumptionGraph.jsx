@@ -4,30 +4,49 @@ import Chart from "react-apexcharts";
 const TotalConsumptionGraph = ({ data = [] }) => {
   const [mode, setMode] = useState("kg");
 
-  if (!data.length) {
+  // Verifica se há dados válidos
+  if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full bg-white rounded-2xl shadow-sm">
-        <p className="text-gray-400 text-sm">Carregando dados...</p>
+      <div className="flex items-center justify-center h-full w-full bg-white rounded-lg p-4 border border-gray-100">
+        <p className="text-gray-400 text-sm">Sem dados de consumo para exibir.</p>
       </div>
     );
   }
 
-  const projects = [...new Set(data.map((d) => d.project_name))];
-  const materials = [...new Set(data.map((d) => d.material_name))];
-  // Aumentei um pouquinho a altura por item para ficar mais espaçado
-  const chartHeight = Math.max(350, projects.length * 60);
+  // 1. Extração de Categorias (Eixo X - Projetos) e Séries (Materiais)
+  // Filtramos valores nulos ou vazios para evitar chaves undefined
+  const projects = [...new Set(data.map((d) => d.project_name).filter(Boolean))];
+  const materials = [...new Set(data.map((d) => d.material_name).filter(Boolean))];
 
+  // Se após filtrar não sobrar nada, retorna aviso
+  if (projects.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full w-full bg-white rounded-lg p-4">
+        <p className="text-gray-400 text-sm">Dados de projeto incompletos.</p>
+      </div>
+    );
+  }
+
+  // 2. Cálculo de Largura para Scroll Horizontal
+  // Define 120px por coluna de projeto ou 100% da tela, o que for maior
+  const minColumnWidth = 120; 
+  const calculatedWidth = projects.length * minColumnWidth;
+  // Se a largura calculada for muito pequena, usamos '100%' para preencher o container
+  const containerWidth = calculatedWidth < 400 ? "100%" : `${calculatedWidth}px`;
+
+  // 3. Montagem das Séries
   const series = materials.map((material) => ({
     name: material,
     data: projects.map((project) => {
       const item = data.find(
         (d) => d.project_name === project && d.material_name === material
       );
-      return item
-        ? mode === "kg"
-          ? Number(item.total_material_consumed)
-          : Number(item.total_value)
-        : 0;
+      
+      // Proteção contra valores nulos/undefined
+      if (!item) return 0;
+
+      const val = mode === "kg" ? item.total_material_consumed : item.total_value;
+      return Number(val) || 0; // Garante que retorne número, mesmo se a API mandar string
     }),
   }));
 
@@ -35,107 +54,111 @@ const TotalConsumptionGraph = ({ data = [] }) => {
     chart: {
       type: "bar",
       stacked: true,
-      toolbar: { show: true },
-      zoom: { enabled: true, type: "xy" },
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      fontFamily: "inherit",
     },
     plotOptions: {
       bar: {
-        horizontal: true,
-        columnWidth: "40%",
-        borderRadius: 4,
+        horizontal: false, // FALSE = Barras Verticais (Em pé)
+        columnWidth: "50%",
+        borderRadius: 2,
         dataLabels: {
           total: {
             enabled: true,
-            style: {
-              fontSize: "11px",
-              fontWeight: 600,
-              color: "#333",
-            },
+            offsetY: -20,
+            style: { fontSize: "10px", fontWeight: 700, color: "#333" },
             formatter: (val) => {
-              if (val < 1) return "";
+              if (val <= 0) return "";
               return mode === "kg"
-                ? `${val.toFixed(0)} kg`
-                : `R$ ${val.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+                ? `${val.toFixed(0)}`
+                : `R$${val.toLocaleString("pt-BR", { notation: "compact" })}`;
             },
           },
         },
       },
     },
     xaxis: {
+      categories: projects,
       labels: {
-        style: { fontSize: "11px", colors: "#333" },
-        formatter: (val) => {
-          if (val < 1) return val.toFixed(0);
-          return mode === "kg"
-            ? `${val.toFixed(0)}`
-            : `R$ ${val.toLocaleString("pt-BR")}`;
-        },
+        style: { fontSize: "11px", colors: "#555", fontWeight: 500 },
+        rotate: -45, // Inclina rótulos para caber nomes longos
+        rotateAlways: false,
+        hideOverlappingLabels: false,
+        trim: false,
+        maxHeight: 120, // Aumenta espaço para labels inclinados
       },
-      axisBorder: { show: false },
+      axisBorder: { show: true, color: "#e5e7eb" },
       axisTicks: { show: false },
     },
     yaxis: {
-      categories: projects,
       labels: {
-        style: { fontSize: "11px", colors: "#333" },
-        maxWidth: 160, // Limita largura do texto do projeto para não espremer o gráfico
+        style: { fontSize: "10px", colors: "#666" },
+        formatter: (val) => {
+          if (mode === "reais")
+            return `R$ ${val.toLocaleString("pt-BR", { notation: "compact" })}`;
+          return val.toFixed(0);
+        },
       },
-      axisBorder: { show: false },
-      axisTicks: { show: false },
     },
     legend: {
       position: "top",
-      horizontalAlign: "left",
+      horizontalAlign: "right",
       fontSize: "11px",
-      markers: { radius: 4 },
+      markers: { radius: 12 },
     },
     dataLabels: { enabled: false },
-    colors: ["#4B0082", "#6495ED", "#32CD32", "#87CEFA", "#9370DB"],
+    
     tooltip: {
+      theme: "light",
       y: {
         formatter: (val) =>
           mode === "kg"
-            ? `${val.toFixed(0)} kg`
-            : `R$ ${val.toLocaleString("pt-BR", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}`,
+            ? `${Number(val).toFixed(2)} kg`
+            : `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
       },
     },
-    grid: { borderColor: "transparent" },
+    grid: {
+      borderColor: "#f3f4f6",
+      padding: { top: 0, right: 0, bottom: 0, left: 10 },
+    },
   };
 
   return (
-    <div className="p-3 bg-white rounded-2xl shadow-sm h-full w-full flex flex-col">
-      {/* Título e Botões (seção fixa) */}
-      <div className="flex items-center justify-between mb-3 font-medium">
-        <span className="text-gray-700">Consumo Total</span>
-        
-        <div className="flex gap-1 border rounded-lg overflow-hidden bg-gray-50">
+    <div className="h-full w-full flex flex-col p-2 bg-white rounded-lg">
+      {/* Header com Botões */}
+      <div className="flex items-center justify-between mb-2 shrink-0">
+        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+          Visualização
+        </span>
+        <div className="flex bg-gray-100 rounded p-0.5">
           <button
             onClick={() => setMode("kg")}
-            className={`px-3 py-1 text-xs transition ${
+            className={`px-3 py-1 text-[10px] rounded font-semibold transition-colors ${
               mode === "kg"
-                ? "bg-sky-200 text-sky-900 font-semibold"
-                : "text-gray-500 hover:bg-gray-100"
+                ? "bg-white text-green-700 shadow-sm ring-1 ring-green-100"
+                : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            Qtd (kg)
+            KG
           </button>
           <button
             onClick={() => setMode("reais")}
-            className={`px-3 py-1 text-xs transition ${
+            className={`px-3 py-1 text-[10px] rounded font-semibold transition-colors ${
               mode === "reais"
-                ? "bg-sky-200 text-sky-900 font-semibold"
-                : "text-gray-500 hover:bg-gray-100"
+                ? "bg-white text-green-700 shadow-sm ring-1 ring-green-100"
+                : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            Valor (R$)
+            R$
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto custom-scrollbar pr-2 pb-2">
-        <div style={{ minWidth: "600px", height: chartHeight }}>
+
+      {/* Container do Gráfico com Scroll Horizontal */}
+      {/* flex-1 garante que ocupe a altura restante. overflow-x-auto permite rolagem lateral */}
+      <div className="flex-1 w-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-green-200 scrollbar-track-transparent pb-2">
+        <div style={{ width: containerWidth, minWidth: "100%", height: "100%" }}>
           <Chart
             options={options}
             series={series}
