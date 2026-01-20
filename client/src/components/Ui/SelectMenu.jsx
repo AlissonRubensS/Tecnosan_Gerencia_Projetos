@@ -1,29 +1,73 @@
-import { useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { createPortal } from "react-dom"; // 1. Import do Portal
 import { FaCheck } from "react-icons/fa6";
 import { IoChevronDownSharp } from "react-icons/io5";
 
 function SelectMenu({
   variant = "small",
   maxSelections = 0,
-  options = [], // [{ id, label }]
-  selectedOption = [], // [ id ]
+  options = [],
+  selectedOption = [],
   setSelectedOption,
 }) {
   const [isOpen, setOpen] = useState(false);
-  const containerWidth = variant === "full" ? "w-full" : "w-48";
+  const containerRef = useRef(null); // 2. Ref para medir a posição do botão
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  const longestLabel = useMemo(() => {
+    const placeholder = "Selecione uma opção";
+    const longest = options.reduce(
+      (a, b) => (a.label.length > b.label.length ? a : b),
+      { label: "" }
+    ).label;
+    return longest.length > placeholder.length ? longest : placeholder;
+  }, [options]);
+
+  const widthClass = variant === "full" ? "w-full" : "min-w-[12rem] w-fit";
 
   const getLabelById = (id) => {
     const found = options.find((o) => o.id === id);
     return found ? found.label : id;
   };
 
+  const toggleOpen = () => {
+    if (!isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY, 
+        left: rect.left + window.scrollX,  
+        width: rect.width,                 
+      });
+    }
+    setOpen((prev) => !prev);
+  };
+
+  useEffect(() => {
+    const handleScroll = () => { if (isOpen) setOpen(false); };
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [isOpen]);
+
   return (
-    <div className={`relative z-[9999]${containerWidth}`}>
+    <div 
+      ref={containerRef} 
+      className={`relative grid ${widthClass}`}
+    >
+      {/* Elemento Fantasma (Define a largura) */}
+      <div className="invisible col-start-1 row-start-1 flex items-center justify-between p-2 overflow-hidden pointer-events-none">
+        <span className="truncate">{longestLabel}</span>
+        <span className="w-5 shrink-0 ml-2" />
+      </div>
+
       {/* Botão */}
       <button
         type="button"
-        className="flex items-center justify-between bg-gray-50 p-2 rounded-md w-full text-left"
-        onClick={() => setOpen((v) => !v)}
+        className="col-start-1 row-start-1 flex items-center justify-between bg-gray-50 p-2 rounded-md w-full text-left border border-transparent focus:border-gray-300"
+        onClick={toggleOpen}
       >
         <span className="truncate">
           {selectedOption.length === 0
@@ -32,57 +76,67 @@ function SelectMenu({
             ? getLabelById(selectedOption[0])
             : `${selectedOption.length} opções selecionadas`}
         </span>
-        <IoChevronDownSharp className="text-gray-500 shrink-0" />
+        <IoChevronDownSharp className="text-gray-500 shrink-0 ml-2" />
       </button>
-      {/* Dropdown */}
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-full max-h-[40vh] overflow-auto bg-white p-1 shadow-md rounded-md z-50 text-gray-700 whitespace-nowrap">
-          {selectedOption.length > 1 && (
-            <button
-              className="w-full text-left hover:bg-slate-200 p-1 rounded-md text-xs border-b"
-              onClick={() => {
-                setSelectedOption([]);
-                setOpen(false);
-              }}
-            >
-              Limpar Seleção
-            </button>
-          )}
 
-          {options.map((o) => {
-            const checked = selectedOption.includes(o.id);
-
-            return (
+      {/* 4. Renderização via Portal */}
+      {isOpen &&
+        createPortal(
+          <div
+            // Aplicamos as coordenadas calculadas diretamente no style
+            style={{
+              top: coords.top,
+              left: coords.left,
+              width: coords.width,
+            }}
+            className="absolute mt-1 max-h-[40vh] overflow-auto bg-white p-1 shadow-xl rounded-md z-[9999] text-gray-700 whitespace-nowrap border border-gray-100"
+          >
+            {selectedOption.length > 1 && (
               <button
-                key={o.id}
-                className="w-full flex items-center gap-2 text-left hover:bg-slate-200 p-1 rounded-md"
+                className="w-full text-left hover:bg-slate-200 p-1 rounded-md text-xs border-b mb-1 text-red-500"
                 onClick={() => {
-                  setSelectedOption((prev) => {
-                    if (prev.includes(o.id))
-                      return prev.filter((x) => x !== o.id);
-
-                    if (maxSelections === 1) return [o.id];
-                    if (maxSelections > 1 && prev.length >= maxSelections)
-                      return prev;
-
-                    return [...prev, o.id];
-                  });
-                  if (
-                    selectedOption.length >= maxSelections &&
-                    maxSelections >= 1
-                  ) {
-                    setOpen(false);
-                  }
+                  setSelectedOption([]);
+                  setOpen(false);
                 }}
-                type="button"
               >
-                {checked ? <FaCheck /> : <span className="w-4" />}
-                <span>{o.label}</span>
+                Limpar Seleção
               </button>
-            );
-          })}
-        </div>
-      )}
+            )}
+
+            {options.map((o) => {
+              const checked = selectedOption.includes(o.id);
+              return (
+                <button
+                  key={o.id}
+                  className="w-full flex items-center gap-2 text-left hover:bg-slate-200 p-1 rounded-md transition-colors"
+                  onClick={() => {
+                    setSelectedOption((prev) => {
+                      if (prev.includes(o.id))
+                        return prev.filter((x) => x !== o.id);
+
+                      if (maxSelections === 1) return [o.id];
+                      if (maxSelections > 1 && prev.length >= maxSelections)
+                        return prev;
+
+                      return [...prev, o.id];
+                    });
+                    if (
+                      selectedOption.length >= maxSelections &&
+                      maxSelections >= 1
+                    ) {
+                      setOpen(false);
+                    }
+                  }}
+                  type="button"
+                >
+                  {checked ? <FaCheck className="text-green-600 text-xs" /> : <span className="w-3" />}
+                  <span className="truncate">{o.label}</span>
+                </button>
+              );
+            })}
+          </div>,
+          document.body // Renderiza diretamente no Body
+        )}
     </div>
   );
 }

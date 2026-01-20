@@ -15,8 +15,7 @@ import { listProjects } from "@services/ProjectService";
 import { getEquipment } from "@services/EquipmentService";
 import { VerifyAuth } from "@services/AuthService";
 import {
-  countStatusComponents,
-  countStatusComponentsByProj,
+  countStatusComponentsByProj, // Vamos usar apenas este, que traz os dados detalhados
 } from "@services/ComponentsServices";
 import {
   vwProjectConsumedMaterials,
@@ -25,10 +24,7 @@ import {
 import { getLeadTimeVsReal } from "@services/ComponentsServices";
 
 // Utils
-import {
-  getDefaultDateRange,
-  formatDateForApi,
-} from "../../../utils/dateUtils";
+import { getDefaultDateRange, formatDateForApi } from "../../../utils/dateUtils";
 
 import entrega from "@imgs/entrega.png";
 import caixa from "@imgs/caixa.png";
@@ -38,250 +34,211 @@ export default function Reports() {
   const defaultDates = getDefaultDateRange(3);
   const [startDate, setStartDate] = useState(defaultDates.start);
   const [endDate, setEndDate] = useState(defaultDates.end);
-  
   const [selectedProj, setSelectedProj] = useState([]);
   const [selectedEquip, setSelectedEquip] = useState([]);
-  
   const [currentUserId, setCurrentUserId] = useState(null);
 
-  // --- Estados de Dados (Listas) ---
+  // --- Estados de Dados ---
   const [projects, setProjects] = useState([]);
   const [equipments, setEquipments] = useState([]);
-
-  // --- Estados de Dados (Métricas) ---
   const [dataConsumedMaterials, setDataConsumedMaterials] = useState([]);
   const [processDelaysList, setProcessDelaysList] = useState([]);
-  const [countStatusGraph, setCountStatusGraph] = useState([]); // Dados brutos
-  const [metrics, setMetrics] = useState({ completed: 0, pending: 0 });
+  const [countStatusGraph, setCountStatusGraph] = useState([]); // Fonte da verdade para Gráfico e Cards
   const [leadTimeData, setLeadTimeData] = useState([]);
 
   // ---------------------------------------------------------
-  // LÓGICA DE PROCESSAMENTO DE DADOS (Atualizada para Pending, Running, Completed, Failed)
+  // 1. LÓGICA UNIFICADA (Calcula Gráfico E Cards juntos)
   // ---------------------------------------------------------
-  const evolutionChartData = useMemo(() => {
-    if (!countStatusGraph || countStatusGraph.length === 0) {
-      return { categories: [], series: [] };
-    }
-
+  const { chartData, cardMetrics } = useMemo(() => {
+    // Valores iniciais
+    const metrics = { completed: 0, pending: 0 };
     const equipmentMap = new Map();
+
+    if (!countStatusGraph || countStatusGraph.length === 0) {
+      return { 
+        chartData: { categories: [], series: [] }, 
+        cardMetrics: metrics 
+      };
+    }
 
     countStatusGraph.forEach((item) => {
       const equipName = item.equipment_name;
       const qtd = Number(item.numero_pecas) || 0;
-      // Garante que a comparação seja segura (remove espaços extras)
       const status = (item.status || "").trim();
 
+      // --- A. Lógica para os Cards (Soma Total) ---
+      if (status === "Completed") {
+        metrics.completed += qtd;
+      } else {
+        // Pending, Running, Failed -> Contam como Pendentes
+        metrics.pending += qtd;
+      }
+
+      // --- B. Lógica para o Gráfico (Agrupado por Equipamento) ---
       if (!equipmentMap.has(equipName)) {
         equipmentMap.set(equipName, { entregues: 0, pendentes: 0 });
       }
-
       const entry = equipmentMap.get(equipName);
 
-      // --- REGRA ATUALIZADA ---
-      // Classes do Banco: Pending, Running, Completed, Failed
       if (status === "Completed") {
         entry.entregues += qtd;
       } else {
-        // Se for Pending, Running ou Failed, cai aqui
         entry.pendentes += qtd;
       }
     });
 
+    // Formatação para o ApexCharts
     const categories = Array.from(equipmentMap.keys());
-    
     const series = [
-      {
-        name: "Entregues",
-        data: categories.map((cat) => equipmentMap.get(cat).entregues),
-      },
-      {
-        name: "Pendentes",
-        data: categories.map((cat) => equipmentMap.get(cat).pendentes),
-      },
+      { name: "Entregues", data: categories.map((cat) => equipmentMap.get(cat).entregues) },
+      { name: "Pendentes", data: categories.map((cat) => equipmentMap.get(cat).pendentes) },
     ];
 
-    return { categories, series };
-  }, [countStatusGraph]);
+    return { 
+      chartData: { categories, series }, 
+      cardMetrics: metrics 
+    };
+  }, [countStatusGraph]); // Recalcula sempre que os dados brutos mudarem
 
   // ---------------------------------------------------------
 
-  // 1. Carregamento Inicial
+  // --- Buscas de Dados Iniciais ---
   useEffect(() => {
     let isMounted = true;
     const fetchOptionsData = async () => {
-      try {
-        const user = await VerifyAuth();
-        if (!user) return;
-
-        if (isMounted) setCurrentUserId(user.user_id);
-
+      const user = await VerifyAuth();
+      if (user && isMounted) {
+        setCurrentUserId(user.user_id);
         const [projData, equipData] = await Promise.all([
           listProjects(user.user_id),
           getEquipment(user.user_id),
         ]);
-
-        if (isMounted) {
-          setProjects(projData || []);
-          setEquipments(equipData || []);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar opções iniciais:", error);
+        setProjects(projData || []);
+        setEquipments(equipData || []);
       }
     };
     fetchOptionsData();
     return () => { isMounted = false; };
   }, []);
 
-  // 2. Busca de Métricas
+  // --- Busca de Métricas (Ao mudar filtros) ---
   const fetchDashboardMetrics = useCallback(async () => {
     if (!currentUserId) return;
-
     const projId = selectedProj.length > 0 ? selectedProj[0] : null;
     const equipId = selectedEquip.length > 0 ? selectedEquip[0] : null;
 
     try {
-      const formattedStart = formatDateForApi(startDate);
-      const formattedEnd = formatDateForApi(endDate);
+      const start = formatDateForApi(startDate);
+      const end = formatDateForApi(endDate);
 
+      // Removemos a chamada 'countStatusComponents' (singular) pois calculamos 
+      // os totais localmente baseados no 'countStatusComponentsByProj' (plural)
+      // para garantir consistência.
       const [
-        graphResponse,
-        cardsResponse,
-        leadTimeResponse,
-        materialDataRaw,
-        delayDataRaw
+        graphRes,
+        // cardsRes (removido)
+        leadRes,
+        matRes,
+        delayRes
       ] = await Promise.all([
-        countStatusComponentsByProj(projId, equipId, formattedStart, formattedEnd),
-        countStatusComponents(projId, equipId, formattedStart, formattedEnd),
-        getLeadTimeVsReal(projId, equipId, formattedStart, formattedEnd),
-        vwProjectConsumedMaterials(currentUserId, projId, formattedStart, formattedEnd),
+        countStatusComponentsByProj(projId, equipId, start, end),
+        // countStatusComponents(projId, equipId, start, end), // <-- Não precisamos mais fazer essa requisição extra
+        getLeadTimeVsReal(projId, equipId, start, end),
+        vwProjectConsumedMaterials(currentUserId, projId, start, end),
         vwProjectDepartmentDelays(projId)
       ]);
 
-      setCountStatusGraph(graphResponse || []);
-      setLeadTimeData(leadTimeResponse || []);
-
-      if (cardsResponse && cardsResponse[0]) {
-        setMetrics({
-          completed: cardsResponse[0].total_completed || 0,
-          pending: cardsResponse[0].total_pending || 0,
-        });
-      } else {
-        setMetrics({ completed: 0, pending: 0 });
-      }
-
-      if (Array.isArray(materialDataRaw)) {
-        if (projId) {
-            const filtered = materialDataRaw.filter(m => m.project_id === projId);
-            setDataConsumedMaterials(filtered);
-        } else {
-            setDataConsumedMaterials(materialDataRaw);
-        }
-      } else {
-        setDataConsumedMaterials([]);
-      }
-
-      setProcessDelaysList(delayDataRaw || []);
+      setCountStatusGraph(graphRes || []);
+      setLeadTimeData(leadRes || []);
+      
+      const matFiltered = (matRes || []).filter(m => projId ? m.project_id === projId : true);
+      setDataConsumedMaterials(matFiltered);
+      setProcessDelaysList(delayRes || []);
 
     } catch (error) {
-      console.error("Erro ao atualizar métricas:", error);
+      console.error("Erro metrics:", error);
     }
   }, [selectedProj, selectedEquip, startDate, endDate, currentUserId]);
 
-  useEffect(() => {
-    fetchDashboardMetrics();
-  }, [fetchDashboardMetrics]);
+  useEffect(() => { fetchDashboardMetrics(); }, [fetchDashboardMetrics]);
 
-  const uniqueMaterialNames = [
-    ...new Set(dataConsumedMaterials.map((p) => p.material_name))
-  ].filter(Boolean);
+  const uniqueMaterialNames = [...new Set(dataConsumedMaterials.map((p) => p.material_name))].filter(Boolean);
+
+  // --- Estilos ---
+  const cardStyle = "bg-white p-4 rounded-lg shadow-md border-t-4 flex flex-col";
+  const scrollStyle = "overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent";
 
   return (
-    <div className="h-screen w-screen space-y-4 pb-16 bg-gray-50 overflow-x-hidden">
+    <div className="min-h-screen w-full pb-16 bg-gray-50 overflow-x-hidden">
       <NavBar select_index={3} />
 
-      {/* --- HEADER DE FILTROS --- */}
-      <div className="flex flex-row bg-white py-2 px-4 items-center justify-between shadow-md mx-4 rounded-lg border-l-4 border-green-500">
-        <h2 className="font-bold text-lg text-gray-800">Dashboard</h2>
-
-        <div className="flex flex-row space-x-4 items-end">
-          <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase">Projetos</p>
-            <SelectMenu
-              className="h-7 w-40"
-              maxSelections={1}
-              options={projects.map((p) => ({
-                id: p.project_id,
-                label: p.project_name,
-              }))}
-              selectedOption={selectedProj}
-              setSelectedOption={setSelectedProj}
-            />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase">Equipamento</p>
-            <SelectMenu
-              className="h-7 w-40"
-              maxSelections={1}
-              options={equipments.map((e) => ({
-                id: e.equipment_id,
-                label: e.equipment_name,
-              }))}
-              selectedOption={selectedEquip}
-              setSelectedOption={setSelectedEquip}
-            />
-          </div>
-          <div className="flex flex-col">
-            <p className="self-center text-xs font-semibold text-gray-500 mb-1 uppercase">Período</p>
-            <div className="flex flex-row space-x-2">
-              <input
-                type="date"
-                className="bg-gray-50 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-700 font-medium"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-              <input
-                type="date"
-                className="bg-gray-50 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-700 font-medium"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+      {/* HEADER DE FILTROS */}
+      <div className="sticky top-0 z-20 mx-4 mt-4 mb-6">
+        <div className="flex flex-row bg-white py-3 px-4 items-center justify-between shadow-md rounded-lg border-l-4 border-green-500">
+          <h2 className="font-bold text-xl text-gray-800">Dashboard</h2>
+          <div className="flex flex-row space-x-6 items-end">
+            <div>
+              <p className="text-xs font-bold text-gray-500 mb-1 uppercase">Projeto</p>
+              <SelectMenu className="h-8 w-48" maxSelections={1} options={projects.map(p => ({ id: p.project_id, label: p.project_name }))} selectedOption={selectedProj} setSelectedOption={setSelectedProj} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-500 mb-1 uppercase">Equipamento</p>
+              <SelectMenu className="h-8 w-48" maxSelections={1} options={equipments.map(e => ({ id: e.equipment_id, label: e.equipment_name }))} selectedOption={selectedEquip} setSelectedOption={setSelectedEquip} />
+            </div>
+            <div className="flex flex-col">
+              <p className="self-center text-xs font-bold text-gray-500 mb-1 uppercase">Período</p>
+              <div className="flex flex-row space-x-2">
+                <input type="date" className="bg-gray-50 px-2 py-1.5 rounded border border-gray-300 text-xs focus:ring-green-500" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <input type="date" className="bg-gray-50 px-2 py-1.5 rounded border border-gray-300 text-xs focus:ring-green-500" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* --- GRID --- */}
-      <div className="grid grid-cols-12 gap-4 mx-4">
+      {/* GRID DE CONTEÚDO */}
+      <div className="grid grid-cols-12 gap-6 mx-4 mb-10">
         
-        {/* Linha 1: Cards + Gráfico Principal */}
-        <div className="col-span-7 bg-white p-4 rounded-lg shadow-md border-t-2 border-green-100 flex flex-row">
-          <div className="flex flex-col space-y-6 w-1/4 pr-4 justify-center">
-            <InfoCard
-              title="Entregues"
-              value={metrics.completed}
-              icon={<img src={entrega} className="w-8 h-8 opacity-90" alt="Entregues" />}
-            />
-            <InfoCard
-              title="Peças Pendentes"
-              value={metrics.pending}
-              icon={<img src={caixa} className="w-8 h-8 opacity-90" alt="Pendentes" />}
-            />
+        {/* LINHA 1: Evolução (Status) */}
+        <div className={`col-span-12 border-green-500 h-[450px] !flex-row ${cardStyle}`}>
+          {/* Esquerda: Cards (Agora usando cardMetrics calculado localmente) */}
+          <div className="flex flex-col space-y-4 w-1/5 pr-6 justify-center border-r border-gray-100 shrink-0">
+             <h3 className="text-gray-500 font-bold uppercase text-sm mb-2">Resumo</h3>
+             <InfoCard title="Entregues" value={cardMetrics.completed} icon={<img src={entrega} className="w-8 h-8 opacity-90" />} />
+             <InfoCard title="Pendentes" value={cardMetrics.pending} icon={<img src={caixa} className="w-8 h-8 opacity-90" />} />
           </div>
-          <div className="w-3/4 pl-4 h-full">
-            <ProjectEvolutionGraph 
-                categories={evolutionChartData.categories}
-                series={evolutionChartData.series}
-            />
+          {/* Direita: Gráfico */}
+          <div className="flex-1 pl-4 min-w-0 flex flex-col">
+             <h3 className="text-lg font-bold text-gray-800 mb-2">Evolução por Equipamento</h3>
+             <div className="flex-1 w-full min-h-0 relative">
+                <ProjectEvolutionGraph 
+                    categories={chartData.categories}
+                    series={chartData.series}
+                />
+             </div>
           </div>
         </div>
 
-        {/* Linha 1: Tabela de Materiais */}
-        <div className="col-span-5 h-96 bg-white p-3 rounded-lg shadow-md border-t-2 border-green-100 overflow-hidden flex flex-col">
-          <h3 className="text-sm font-bold text-gray-700 mb-2 pl-2 border-l-4 border-green-400">
-             Detalhamento por Projeto
-          </h3>
-          <div className="flex-1 overflow-hidden">
-            <CascadeTable
+        {/* LINHA 2: Gráficos de Apoio */}
+        <div className={`col-span-6 h-96 border-green-400 ${cardStyle}`}>
+          <h3 className="text-base font-bold text-gray-700 mb-2">Consumo de Materiais</h3>
+          <div className="flex-1 w-full min-h-0 relative">
+             <TotalConsumptionGraph data={dataConsumedMaterials} />
+          </div>
+        </div>
+
+        <div className={`col-span-6 h-96 border-green-400 ${cardStyle}`}>
+          <h3 className="text-base font-bold text-gray-700 mb-2">Lead Time Real vs Previsto</h3>
+          <div className="flex-1 w-full min-h-0 relative">
+             <LeadTimeGraph data={leadTimeData} />
+          </div>
+        </div>
+
+        {/* LINHA 3: Tabelas */}
+        <div className={`col-span-6 h-96 border-gray-300 ${cardStyle}`}>
+          <h3 className="text-base font-bold text-gray-700 mb-3">Detalhamento do Projeto</h3>
+          <div className={`flex-1 border border-gray-100 rounded ${scrollStyle}`}>
+             <CascadeTable
                 headers={["Equipamentos", "Valores"]}
                 filter={uniqueMaterialNames}
                 values={dataConsumedMaterials}
@@ -289,42 +246,22 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Linha 2: Consumo Total */}
-        <div className="col-span-4 h-96 bg-white p-3 rounded-lg shadow-md border-t-2 border-green-100 flex flex-col">
-          <h3 className="text-sm font-bold text-gray-700 mb-2 pl-2 border-l-4 border-green-400 shrink-0">
-             Consumo Total
-          </h3>
-          <div className="flex-1 min-h-0 w-full">
-             <TotalConsumptionGraph data={dataConsumedMaterials} />
+        <div className={`col-span-6 h-96 border-red-400 ${cardStyle}`}>
+          <h3 className="text-base font-bold text-gray-700 mb-3">Processos em Atraso</h3>
+          <div className={`flex-1 border border-gray-100 rounded ${scrollStyle}`}>
+             <CascadeTableTwoLevel
+                title=""
+                data={processDelaysList.map((data) => ({
+                  component_id: data.component_id,
+                  component_name: data.component_name,
+                  department_id: data.department_id,
+                  department_name: data.department_name,
+                  days_late: data.total_delay_time?.days || 0,
+                }))}
+              />
           </div>
         </div>
 
-        {/* Linha 2: Lead Time */}
-        <div className="col-span-4 h-96 bg-white p-3 rounded-lg shadow-md border-t-2 border-green-100 overflow-hidden">
-          <h3 className="text-sm font-bold text-gray-700 mb-2 pl-2 border-l-4 border-green-400">
-             Lead Time (Real vs Previsto)
-          </h3>
-          <div className="h-[90%] w-full">
-             <LeadTimeGraph data={leadTimeData} />
-          </div>
-        </div>
-
-        {/* Linha 2: Atrasos */}
-        <div className="col-span-4 h-96 bg-white p-3 rounded-lg shadow-md border-t-2 border-green-100 overflow-y-auto">
-          <h3 className="text-sm font-bold text-gray-700 mb-2 pl-2 border-l-4 border-red-400">
-             Processos em Atraso
-          </h3>
-          <CascadeTableTwoLevel
-            title=""
-            data={processDelaysList.map((data) => ({
-              component_id: data.component_id,
-              component_name: data.component_name,
-              department_id: data.department_id,
-              department_name: data.department_name,
-              days_late: data.total_delay_time?.days || 0,
-            }))}
-          />
-        </div>
       </div>
     </div>
   );

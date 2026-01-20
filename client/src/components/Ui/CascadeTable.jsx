@@ -12,7 +12,6 @@ function CascadeTable({ title, headers, values, filter }) {
   const [openGroups, setOpenGroups] = useState({});
   const [selectedFilterIndex, setSelectedFilterIndex] = useState(0);
 
-  // 🔹 Cria lista de filtros de materiais (únicos, ordenados, + "Todos")
   const filters = useMemo(() => {
     const uniqueFromData = Array.from(
       new Set(values.map((v) => normalize(v.material_name)))
@@ -33,7 +32,6 @@ function CascadeTable({ title, headers, values, filter }) {
 
   const selectedFilter = filters[selectedFilterIndex] ?? filters[0];
 
-  // 🔹 Agrupa os dados em níveis (projeto > equipamento > componente)
   const groupedData = useMemo(() => {
     const grouped = {};
     values.forEach((item) => {
@@ -59,7 +57,6 @@ function CascadeTable({ title, headers, values, filter }) {
   const toggleGroup = (key) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  // 🔹 Calcula total de um grupo com base no filtro atual
   const calcularTotal = (items) => {
     const sel = normalize(selectedFilter);
     return items.reduce((acc, { material, total_material_consumed }) => {
@@ -70,7 +67,6 @@ function CascadeTable({ title, headers, values, filter }) {
     }, 0);
   };
 
-  // 🔹 Remove grupos que não têm uso do material selecionado
   const filteredProjects = useMemo(() => {
     const sel = normalize(selectedFilter);
     const filtered = {};
@@ -111,12 +107,11 @@ function CascadeTable({ title, headers, values, filter }) {
   ];
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-2 text-base">
-      {/* 🔹 Cabeçalho */}
+    <div>
       <div className="relative bg-sky-200 font-bold py-1 px-2 flex items-center text-base">
         <h2 className="flex-1 text-center">{title}</h2>
         {filters.length > 1 && (
-          <div className="absolute right-2">
+          <div>
             <select
               className="border-none rounded p-1  bg-transparent"
               value={selectedFilterIndex}
