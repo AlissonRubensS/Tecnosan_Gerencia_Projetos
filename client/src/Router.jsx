@@ -11,71 +11,82 @@ import Budgets from "@pages/Budgets/Budgets.jsx";
 import Recipes from "@pages/Recipes/Recipes.jsx";
 
 // Importar o novo componente Guard
-import AuthGuard from "./components/AuthGuard.jsx"; 
+import AuthGuard from "./components/AuthGuard.jsx";
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <Login />,
+    },
+    {
+      path: "/home",
+      element: (
+        // Nível 3 NÃO pode entrar aqui
+        <AuthGuard restrictLevel3={true}>
+          <Home />
+        </AuthGuard>
+      ),
+    },
+    {
+      path: "/production",
+      element: (
+        // Nível 3 PODE entrar aqui (restrictLevel3={false})
+        <AuthGuard restrictLevel3={false}>
+          <Production />
+        </AuthGuard>
+      ),
+    },
+    {
+      path: "/employees",
+      element: (
+        <AuthGuard restrictLevel3={true}>
+          <Employees />
+        </AuthGuard>
+      ),
+    },
+    {
+      path: "/reports",
+      element: (
+        <AuthGuard restrictLevel3={true}>
+          <Reports />
+        </AuthGuard>
+      ),
+    },
+    {
+      path: "/projects",
+      element: (
+        <AuthGuard restrictLevel3={true}>
+          <Projects />
+        </AuthGuard>
+      ),
+    },
+    {
+      path: "/budgets",
+      element: (
+        <AuthGuard restrictLevel3={true}>
+          <Budgets />
+        </AuthGuard>
+      ),
+    },
+    {
+      path: "/recipes",
+      element: (
+        <AuthGuard restrictLevel3={true}>
+          <Recipes />
+        </AuthGuard>
+      ),
+    },
+  ],
   {
-    path: "/",
-    element: <Login />,
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true,
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
+    },
   },
-  {
-    path: "/home",
-    element: (
-      // Nível 3 NÃO pode entrar aqui
-      <AuthGuard restrictLevel3={true}>
-        <Home />
-      </AuthGuard>
-    ),
-  },
-  {
-    path: "/production",
-    element: (
-      // Nível 3 PODE entrar aqui (restrictLevel3={false})
-      <AuthGuard restrictLevel3={false}>
-        <Production />
-      </AuthGuard>
-    ),
-  },
-  {
-    path: "/employees",
-    element: (
-      <AuthGuard restrictLevel3={true}>
-        <Employees />
-      </AuthGuard>
-    ),
-  },
-  {
-    path: "/reports",
-    element: (
-      <AuthGuard restrictLevel3={true}>
-        <Reports />
-      </AuthGuard>
-    ),
-  },
-  {
-    path: "/projects",
-    element: (
-      <AuthGuard restrictLevel3={true}>
-        <Projects />
-      </AuthGuard>
-    ),
-  },
-  {
-    path: "/budgets",
-    element: (
-      <AuthGuard restrictLevel3={true}>
-        <Budgets />
-      </AuthGuard>
-    ),
-  },
-  {
-    path: "/recipes",
-    element: (
-      <AuthGuard restrictLevel3={true}>
-        <Recipes />
-      </AuthGuard>
-    ),
-  },
-]);
-
+);
 export { router };

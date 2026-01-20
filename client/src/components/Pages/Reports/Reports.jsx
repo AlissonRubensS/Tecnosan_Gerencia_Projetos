@@ -213,11 +213,12 @@ export default function Reports() {
         
         {/* Tabela 3.1 */}
         <div className={`col-span-6 h-96 border-gray-300 ${cardStyle}`}>
-          <h3 className="text-base font-bold text-gray-700 mb-3">Detalhamento Financeiro</h3>
+          <h3 className="text-base font-bold text-gray-700 mb-3">Detalhamento</h3>
           <div className={tableContainerStyle}>
              <div className="min-w-full inline-block align-top">
                <CascadeTable
-                  headers={["Equipamentos", "Valores"]}
+                  headers={["Projetos", "Valores"]}
+                  title="Detalhamento"
                   filter={uniqueMaterialNames}
                   values={dataConsumedMaterials}
               />
@@ -227,7 +228,7 @@ export default function Reports() {
 
         {/* Tabela 3.2 */}
         <div className={`col-span-6 h-96 border-red-400 ${cardStyle}`}>
-          <h3 className="text-base font-bold text-gray-700 mb-3 text-red-600">Processos em Atraso</h3>
+          <h3 className="text-base font-bold text-gray-700 mb-3">Processos em Atraso</h3>
           <div className={tableContainerStyle}>
              <div className="min-w-full inline-block align-top">
                <CascadeTableTwoLevel

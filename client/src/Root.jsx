@@ -10,7 +10,12 @@ function Root() {
       <selectedProjectContext.Provider
         value={{ currentProject, setCurrentProject }}
       >
-        <RouterProvider router={router} />
+        <RouterProvider 
+          router={router} 
+          future={{
+            v7_startTransition: true,
+          }}
+        />
       </selectedProjectContext.Provider>
     </StrictMode>
   );

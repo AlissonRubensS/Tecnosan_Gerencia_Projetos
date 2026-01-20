@@ -1,5 +1,5 @@
 import { IoMdClose } from "react-icons/io";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import SelectMenu from "../../Ui/SelectMenu";
 
 import { updateMaterial } from "@services/MaterialService.js";
@@ -10,7 +10,7 @@ export default function EditMaterialModal({ isVisible, setVisible, material }) {
   const [materialValue, setMaterialValue] = useState("");
   const [materialUni, setMaterialUni] = useState([]);
 
-  const Unis = [
+  const Unis = useMemo(()=>[
     { id: 0, label: "t" },
     { id: 1, label: "kg" },
     { id: 2, label: "g" },
@@ -19,28 +19,23 @@ export default function EditMaterialModal({ isVisible, setVisible, material }) {
     { id: 5, label: "Milheiro" },
     { id: 6, label: "L" },
     { id: 7, label: "ml" },
-  ];
+  ], [])
 
   useEffect(() => {
     if (material) {
-      setMaterialName(material["Nome"] || "");
+      setMaterialName(material.Material || "");
       setMaterialDesc(material["Descrição"] || "");
 
-      const value_uni = material["Valor Unitário"]?.split(" ");
-      const value = Number(value_uni[0] ?? 0);
-      const uni = value_uni[1]?.replace("R$/", "");
+      const value_uni = material["Valor Unitário"]?.split(" "); // 'R$ 18.5 / Kg'
+      const value = Number(value_uni[1] ?? 0);
       const uni_id = Unis.find(
-        (unit) => unit.label?.toLowerCase() === uni?.toLowerCase()
-      );
-      
-      console.log(uni_id)
-      console.log(material)
-
+        (unit) => unit.label?.toLowerCase() === value_uni[3]?.toLowerCase()
+      )?.id;
       setMaterialValue(value || 0);
-      setMaterialUni([uni_id?.ID]);
+      setMaterialUni([uni_id]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [material]);
+    
+  }, [material, Unis]);
 
   const clearStates = () => {
     setMaterialName("");

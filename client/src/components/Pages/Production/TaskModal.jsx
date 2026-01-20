@@ -165,10 +165,9 @@ function TaskModal({
           deleteEmployeesComponents(taskData.component_id, id)
         ),
         ...materialPromises,
-        ...timesheetPromises, // <--- Adicionado
+        ...timesheetPromises,
       ]);
 
-      console.log("Salvo com sucesso!");
       setOpen(false);
     } catch (error) {
       console.error("Erro ao salvar:", error);

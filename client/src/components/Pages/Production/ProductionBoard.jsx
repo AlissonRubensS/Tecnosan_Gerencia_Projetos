@@ -25,8 +25,6 @@ export default function ProductionBoard({
     let isCancelled = false;
 
     const applyFilters = async () => {
-      console.log("--- INICIANDO FILTRAGEM REAL ---");
-
       // 1. Validações básicas
       if (!tasks || tasks.length === 0) {
         setFilteredTasks([]);
@@ -106,7 +104,6 @@ export default function ProductionBoard({
       // Filtra os nulos e atualiza o estado se o componente ainda estiver montado
       if (!isCancelled) {
         const finalResults = results.filter((t) => t !== null);
-        console.log(`Filtragem concluída: ${finalResults.length} tarefas encontradas.`);
         setFilteredTasks(finalResults);
       }
     };
