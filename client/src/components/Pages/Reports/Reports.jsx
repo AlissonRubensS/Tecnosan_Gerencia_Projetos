@@ -209,7 +209,7 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* LINHA 3: Tabelas (Com Scroll Personalizado) */}
+        {/* LINHA 3: Tabelas*/}
         
         {/* Tabela 3.1 */}
         <div className={`col-span-6 h-96 border-gray-300 ${cardStyle}`}>
