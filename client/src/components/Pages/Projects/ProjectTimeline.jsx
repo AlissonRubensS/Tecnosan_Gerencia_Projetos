@@ -2,6 +2,8 @@ import React, { useEffect, useState, useContext } from "react";
 import StatusButton from "../../Ui/StatusButton";
 import { getEquipment } from "@services/EquipmentService";
 import { getComponents } from "@services/ComponentsServices";
+import { listProjects } from "@services/ProjectService";
+import { VerifyAuth } from "@services/AuthService";
 import { vwSummaryStatus } from "@services/ViewsSummary";
 import { selectedProjectContext } from "@content/SeletedProject.jsx";
 
@@ -15,10 +17,24 @@ export default function ProjectTimeline({ searchTerm, times }) {
 
   useEffect(() => {
     const loadData = async () => {
+      let equipment_data = [];
+      const user = await VerifyAuth();
+
       if (currentProject?.id) {
-        const equipment_data = await getEquipment(currentProject.id);
-        setEquipments(equipment_data || []);
+        // Projeto Específico
+        equipment_data = await getEquipment(currentProject.id);
+      } else {
+        // Todos os Projetos (Assume que getEquipment sem ID retorna todos ou precisa buscar um por um)
+        // Se sua API getEquipment obrigar ID, precisaremos iterar sobre os projetos. 
+        // Assumindo aqui que você quer ver TUDO, buscaremos equipamentos de todos os projetos do usuário.
+        const allProjects = await listProjects(user.user_id);
+        const allEquipsPromises = allProjects.map(p => getEquipment(p.project_id));
+        const allEquipsResults = await Promise.all(allEquipsPromises);
+        equipment_data = allEquipsResults.flat();
       }
+
+      setEquipments(equipment_data || []);
+      
       const component_data = await getComponents();
       setComponents(component_data || []);
 
@@ -26,27 +42,53 @@ export default function ProjectTimeline({ searchTerm, times }) {
       setStatus(status_data);
     };
 
-    const dateLoader = () => {
-      const finalDateRaw = currentProject?.end_date || currentProject?.deadline;
+    const dateLoader = async () => {
+        let startDate, endDate;
 
-      if (currentProject?.start_date && finalDateRaw) {
-        const datesArray = [];
-        const startDate = new Date(currentProject.start_date);
-        const endDate = new Date(finalDateRaw);
+        if (currentProject?.start_date) {
+            // Data do projeto selecionado
+            startDate = new Date(currentProject.start_date);
+            const finalDateRaw = currentProject?.end_date || currentProject?.deadline;
+            endDate = finalDateRaw ? new Date(finalDateRaw) : new Date();
+        } else {
+            // Data Global (Min e Max de todos os projetos)
+            const user = await VerifyAuth();
+            const allProjects = await listProjects(user.user_id);
+            
+            if (allProjects.length > 0) {
+                // Encontrar o menor start_date
+                const minStart = allProjects.reduce((min, p) => {
+                    const d = new Date(p.start_date);
+                    return d < min ? d : min;
+                }, new Date(8640000000000000)); // Max date
 
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(0, 0, 0, 0);
-
-        let currentDate = new Date(startDate);
-        let safety = 0;
-
-        while (currentDate <= endDate && safety < 1000) {
-          datesArray.push(new Date(currentDate));
-          currentDate.setDate(currentDate.getDate() + 1);
-          safety++;
+                // Encontrar o maior end_date/deadline
+                const maxEnd = allProjects.reduce((max, p) => {
+                    const dRaw = p.end_date || p.deadline || new Date().toISOString();
+                    const d = new Date(dRaw);
+                    return d > max ? d : max;
+                }, new Date(-8640000000000000)); // Min date
+                
+                startDate = minStart;
+                endDate = maxEnd;
+            }
         }
-        setTimelineDates(datesArray);
-      }
+
+        if (startDate && endDate) {
+            const datesArray = [];
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+
+            let currentDate = new Date(startDate);
+            let safety = 0;
+            // Limite de segurança aumentado para visão global (ex: 2 anos)
+            while (currentDate <= endDate && safety < 1000) {
+                datesArray.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+                safety++;
+            }
+            setTimelineDates(datesArray);
+        }
     };
 
     loadData();
@@ -72,7 +114,8 @@ export default function ProjectTimeline({ searchTerm, times }) {
   if (!equipments) {
     return <div className="text-gray-500 p-4">Carregando dados...</div>;
   }
-  if (timelineDates.length === 0 && currentProject) {
+  // Se não tem datas mas tem projetos, provavelmente está carregando
+  if (timelineDates.length === 0) {
     return <div className="text-gray-500 p-4">Gerando cronograma...</div>;
   }
 

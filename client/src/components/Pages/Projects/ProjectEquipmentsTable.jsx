@@ -60,7 +60,7 @@ function renderMaterialColumns(
   materialIds = [1, 2, 3, 4, 5, 6, 7]
 ) {
   return materialIds.map((id) => (
-    <th key={id}>{equip_totals[id]?.qtd ?? 0}</th>
+    <th key={id}>{equip_totals[id]?.qtd?.toFixed(2) ?? 0}</th>
   ));
 }
 
@@ -82,7 +82,7 @@ function renderComponentRow(
   statusComponents,
   onStatusChange,
   onDateChange,
-  updatingId // <--- Parametro para controle visual
+  updatingId
 ) {
   const statusOptions = [
     { id: "Pending", label: "Pendente" },
@@ -101,9 +101,7 @@ function renderComponentRow(
     )?.status;
     const currentStatusId = rawStatus || "No Status";
 
-    // Lógica visual: Se for o ID atualizando, usa borda amarela. Se não, usa a transparente original.
     const isSaving = updatingId === comp.component_id;
-    // Aqui garantimos que o estilo original é preservado quando não está salvando
     const currentBorder = isSaving 
         ? "border-yellow-500 bg-yellow-50" 
         : "border-transparent hover:border-gray-300";
@@ -120,17 +118,11 @@ function renderComponentRow(
           <input
             type="datetime-local"
             disabled={isSaving}
-            // Concatenando a borda dinâmica com suas classes originais
             className={`bg-transparent border ${currentBorder} rounded p-1 cursor-pointer w-full text-center text-xs`}
-            
-            // KEY: Fundamental para o React saber que o valor mudou vindo do banco
             key={`date-${comp.component_id}-${time.real_end}`}
-            
             defaultValue={formatDateForInput(time.real_end)}
-            
             onBlur={(e) => {
               const currentVal = formatDateForInput(time.real_end);
-              // Só dispara se o valor for diferente do que já está na tela
               if (e.target.value && e.target.value !== currentVal) {
                 onDateChange(comp.component_id, e.target.value);
               }
@@ -163,22 +155,18 @@ function renderComponentRow(
             }))
           )}
         </td>
-        <td>{time?.total_hours / time?.qtd_employees || 0}</td>
+        <td>{(time?.total_hours / time?.qtd_employees || 0).toFixed(1)}</td>
       </tr>
     );
   });
 }
 
 // --- Componente Principal ---
-
-// ADICIONEI 'onRefresh' NAS PROPS
 function ProjectEquipmentsTable({ times, searchTerm, onRefresh }) {
   const [projectsSummary, setProjectsSummary] = useState([]);
   const [rowsExpands, setRowsExpand] = useState([]);
-  const [equipmentsFilter, setEquipmentsFilter] = useState([]);
+  const [groupedProjects, setGroupedProjects] = useState([]);
   const [summaryStatus, setSummaryStatus] = useState({});
-  
-  // Estado local para saber quem está salvando
   const [updatingId, setUpdatingId] = useState(null);
 
   const { currentProject: project } = useContext(selectedProjectContext);
@@ -211,26 +199,16 @@ function ProjectEquipmentsTable({ times, searchTerm, onRefresh }) {
   const handleDateChange = async (componentId, newValue) => {
     try {
       if (!newValue) return;
-
-      // 1. Feedback Visual ON
       setUpdatingId(componentId);
-
-      // 2. Salva no Banco
       const formattedForDb = newValue.replace("T", " ") + ":00";
       await updateCompletionDate(componentId, formattedForDb);
 
-      // 3. Pede para o Pai recarregar os dados (Refresh Suave)
       if (onRefresh) {
         await onRefresh(); 
-      } else {
-        console.warn("Função onRefresh não foi passada para a tabela!");
       }
-
     } catch (error) {
       console.error("Erro ao salvar data:", error);
-      alert("Não foi possível salvar a data.");
     } finally {
-      // 4. Feedback Visual OFF
       setUpdatingId(null);
     }
   };
@@ -249,89 +227,124 @@ function ProjectEquipmentsTable({ times, searchTerm, onRefresh }) {
   }, []);
 
   useEffect(() => {
-    if (!currentProject?.equipments) {
-      setEquipmentsFilter([]);
-      return;
+    let rawProjects = [];
+
+    // 1. Determina quais projetos considerar
+    if (currentProject) {
+      rawProjects = [currentProject];
+    } else {
+      rawProjects = projectsSummary;
     }
 
-    if (searchTerm == "") {
-      setEquipmentsFilter(currentProject.equipments);
-    } else {
-      setEquipmentsFilter(
-        currentProject.equipments.filter((equip) =>
-          equip.equipment_name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
-  }, [currentProject, searchTerm]);
+    // 2. Filtra equipamentos
+    const processed = rawProjects.map(proj => {
+        const equips = proj.equipments || [];
+        
+        let filteredEquips = equips;
+        if (searchTerm && searchTerm.trim() !== "") {
+            filteredEquips = equips.filter(e => 
+                e.equipment_name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        return {
+            project_id: proj.project_id,
+            project_name: proj.project_name,
+            equipments: filteredEquips
+        };
+    }).filter(p => p.equipments.length > 0); 
+
+    setGroupedProjects(processed);
+
+  }, [currentProject, projectsSummary, searchTerm]);
+
+  if (groupedProjects.length === 0) {
+      return <div className="p-4 text-center text-gray-500">Nenhum equipamento encontrado.</div>;
+  }
 
   return (
-    <table className="w-full project-equipments text-center">
-      <thead>
-        <tr className="text-left bg-[#DBEBFF]">
-          <th className="first:rounded-tl-lg">Equipamentos</th>
-          <th>Início Prev.</th>
-          <th>Início Real</th>
-          <th>Fim Prev.</th>
-          <th>Fim Real</th>
-          <th>Status</th>
-          <th>Resina</th>
-          <th>Roving</th>
-          <th>Tecido KG</th>
-          <th>Tec. CMD</th>
-          <th>Catalizador</th>
-          <th>Manta</th>
-          <th>Reina ISO</th>
-          <th>Valor</th>
-          <th className="last:rounded-tr-lg">Horas-Homem</th>
-        </tr>
-      </thead>
-      <tbody>
-        {equipmentsFilter?.map((equip) => {
-          const equip_totals = TotalEquipmentMaterial(equip);
-          const total_value = sumEquipmentValue(equip_totals);
-          const equipTime = times?.equipments?.[equip.equipment_id] || {};
-          const expanded = isExpanded(rowsExpands, equip.equipment_id);
-          const found = summaryStatus?.equipments?.find(
-            (e) => e.equipment_id == equip.equipment_id
-          );
-          return (
-            <React.Fragment key={equip.equipment_id}>
-              <tr
-                className="bg-gray-200 hover:cursor-pointer "
-                key={equip.equipment_id}
-                onClick={() =>
-                  setRowsExpand((prev) =>
-                    expanded
-                      ? prev.filter((id) => id !== equip.equipment_id)
-                      : [...prev, equip.equipment_id]
-                  )
-                }
-              >
-                <th>{equip.equipment_name}</th>
-                <th>{formatDateTime(equipTime.planned_start)}</th>
-                <th>{formatDateTime(equipTime.real_start)}</th>
-                <th>{formatDateTime(equipTime.planned_end)}</th>
-                <th>{formatDateTime(equipTime.real_end)}</th>
-                <th>{statusLabel(found?.status)}</th>
-                {renderMaterialColumns(equip_totals)}
-                <th>{total_value}</th>
-                <th>{equipTime.total_hours / equipTime.qtd_employees || 0}</th>
-              </tr>
-              {expanded &&
-                renderComponentRow(
-                  equip.components,
-                  times?.components || {},
-                  summaryStatus.components,
-                  handleStatusChange,
-                  handleDateChange,
-                  updatingId // Passando o ID atualizando
-                )}
-            </React.Fragment>
-          );
-        })}
-      </tbody>
-    </table>
+    <div className="flex flex-col gap-8 w-full pb-4">
+      {groupedProjects.map((group) => (
+        <div key={group.project_id} className="flex flex-col gap-2">
+            
+            {!project?.id && (
+              <h2 className="text-lg font-bold text-gray-700 border-l-4 border-blue-500 pl-2">
+                  {group.project_name}
+              </h2>
+            )}
+
+            {/* Tabela do Projeto */}
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                <table className="w-full project-equipments text-center">
+                <thead>
+                    <tr className="text-left bg-[#DBEBFF]">
+                    <th className="first:rounded-tl-lg">Equipamentos</th>
+                    <th>Início Prev.</th>
+                    <th>Início Real</th>
+                    <th>Fim Prev.</th>
+                    <th>Fim Real</th>
+                    <th>Status</th>
+                    <th>Resina</th>
+                    <th>Roving</th>
+                    <th>Tecido KG</th>
+                    <th>Tec. CMD</th>
+                    <th>Catalizador</th>
+                    <th>Manta</th>
+                    <th>Reina ISO</th>
+                    <th>Valor</th>
+                    <th className="last:rounded-tr-lg">Horas-Homem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {group.equipments.map((equip, idx) => {
+                    const equip_totals = TotalEquipmentMaterial(equip);
+                    const total_value = sumEquipmentValue(equip_totals);
+                    const equipTime = times?.equipments?.[equip.equipment_id] || {};
+                    const expanded = isExpanded(rowsExpands, equip.equipment_id);
+                    const found = summaryStatus?.equipments?.find(
+                        (e) => e.equipment_id == equip.equipment_id
+                    );
+                    
+                    return (
+                        <React.Fragment key={`${equip.equipment_id}-${idx}`}>
+                        <tr
+                            className="bg-gray-200 hover:cursor-pointer border-b border-gray-300 last:border-0"
+                            onClick={() =>
+                            setRowsExpand((prev) =>
+                                expanded
+                                ? prev.filter((id) => id !== equip.equipment_id)
+                                : [...prev, equip.equipment_id]
+                            )
+                            }
+                        >
+                            <th className="font-semibold text-gray-800">{equip.equipment_name}</th>
+                            <th>{formatDateTime(equipTime.planned_start)}</th>
+                            <th>{formatDateTime(equipTime.real_start)}</th>
+                            <th>{formatDateTime(equipTime.planned_end)}</th>
+                            <th>{formatDateTime(equipTime.real_end)}</th>
+                            <th>{statusLabel(found?.status)}</th>
+                            {renderMaterialColumns(equip_totals)}
+                            <th>{total_value}</th>
+                            <th>{(equipTime.total_hours / equipTime.qtd_employees || 0).toFixed(1)}</th>
+                        </tr>
+                        {expanded &&
+                            renderComponentRow(
+                            equip.components,
+                            times?.components || {},
+                            summaryStatus.components,
+                            handleStatusChange,
+                            handleDateChange,
+                            updatingId
+                            )}
+                        </React.Fragment>
+                    );
+                    })}
+                </tbody>
+                </table>
+            </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

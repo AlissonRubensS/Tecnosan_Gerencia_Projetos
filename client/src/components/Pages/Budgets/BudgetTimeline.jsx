@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
 import StatusButton from "../../Ui/StatusButton";
 
-export default function ProjectTimeline({
+export default function BudgetTimeline({
   currentBudget,
+  // allBudgets removido pois não estava sendo usado (timelineBudgets já traz as datas)
   searchTerm = "",
   timelineTasks = [],
   timelineEquipments = [],
@@ -15,44 +16,71 @@ export default function ProjectTimeline({
   }, [timelineBudgets, currentBudget]);
 
   // 2. LÓGICA: Geração das datas
+  // Se tem currentBudget, pega só dele. Se não, pega Min/Max de todos usando timelineBudgets.
+  const { startDate, endDate } = useMemo(() => {
+    let start, end;
+
+    if (currentBudget?.id) {
+        if (currentBudgetTimeline?.project_start_at) {
+            start = new Date(currentBudgetTimeline.project_start_at);
+            end = currentBudgetTimeline.project_end_at ? new Date(currentBudgetTimeline.project_end_at) : new Date(start);
+        }
+    } else {
+        // Visão Global
+        if (timelineBudgets.length > 0) {
+            const starts = timelineBudgets.map(b => b.project_start_at ? new Date(b.project_start_at).getTime() : null).filter(Boolean);
+            const ends = timelineBudgets.map(b => b.project_end_at ? new Date(b.project_end_at).getTime() : null).filter(Boolean);
+            
+            if (starts.length > 0) {
+                start = new Date(Math.min(...starts));
+                // Se não tiver data final, usa data atual + 30 dias como fallback
+                const maxEnd = ends.length > 0 ? Math.max(...ends) : start.getTime() + (30 * 24 * 60 * 60 * 1000);
+                end = new Date(maxEnd);
+            }
+        }
+    }
+
+    // Fallback se não encontrar datas
+    if (!start) {
+        start = new Date();
+        end = new Date();
+        end.setDate(end.getDate() + 30);
+    }
+
+    return { startDate: start, endDate: end };
+  }, [currentBudget, currentBudgetTimeline, timelineBudgets]);
+
+  // 3. LÓGICA: Gerar array de dias
   const timelineDates = useMemo(() => {
-    if (!currentBudgetTimeline?.project_start_at) return [];
+    const s = new Date(startDate);
+    const e = new Date(endDate);
+    s.setHours(0,0,0,0);
+    e.setHours(0,0,0,0);
 
-    const start = new Date(currentBudgetTimeline.project_start_at);
-    const end = currentBudgetTimeline.project_end_at
-      ? new Date(currentBudgetTimeline.project_end_at)
-      : new Date(start);
-
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-
-    if (end < start) end.setDate(end.getDate() + 30);
+    if (e < s) e.setDate(e.getDate() + 30);
 
     const dates = [];
-    let curr = new Date(start);
+    let curr = new Date(s);
     let safety = 0;
 
-    while (curr <= end && safety < 365) {
+    // Limite de segurança para não travar o navegador
+    while (curr <= e && safety < 500) {
       dates.push(new Date(curr));
       curr.setDate(curr.getDate() + 1);
       safety++;
     }
     return dates;
-  }, [currentBudgetTimeline]);
+  }, [startDate, endDate]);
 
-  // 3. LÓGICA: Verificação de Intervalo
+  // 4. Verificação de Intervalo
   const isDateInRange = (date, startStr, endStr) => {
     if (!startStr || !endStr) return false;
     
     const checkTime = date.getTime();
-    
-    const startDate = new Date(startStr);
-    startDate.setHours(0, 0, 0, 0);
-    
-    const endDate = new Date(endStr);
-    endDate.setHours(0, 0, 0, 0);
+    const s = new Date(startStr); s.setHours(0, 0, 0, 0);
+    const e = new Date(endStr); e.setHours(0, 0, 0, 0);
 
-    return checkTime >= startDate.getTime() && checkTime <= endDate.getTime();
+    return checkTime >= s.getTime() && checkTime <= e.getTime();
   };
 
   const formatDateHeader = (date) => {
@@ -62,8 +90,24 @@ export default function ProjectTimeline({
     });
   };
 
-  if (!currentBudgetTimeline) {
-    return <div className="text-gray-500 p-4">Selecione um orçamento para visualizar o cronograma.</div>;
+  // 5. Filtragem dos Equipamentos
+  const filteredEquipments = useMemo(() => {
+      let list = timelineEquipments;
+
+      // Se tiver orçamento selecionado, filtra por ele.
+      if (currentBudget?.id) {
+          list = list.filter(e => e.budget_id === currentBudget.id);
+      }
+
+      if (searchTerm) {
+          list = list.filter(equip => equip?.recipe_name?.toLowerCase()?.includes(searchTerm.toLowerCase()));
+      }
+      return list;
+  }, [timelineEquipments, currentBudget, searchTerm]);
+
+
+  if (timelineDates.length === 0) {
+    return <div className="text-gray-500 p-4">Carregando cronograma...</div>;
   }
 
   return (
@@ -95,11 +139,7 @@ export default function ProjectTimeline({
         </thead>
 
         <tbody>
-          {timelineEquipments
-            .filter((equip) =>
-              equip?.recipe_name?.toLowerCase()?.includes(searchTerm.toLowerCase())
-            )
-            .map((equip) => {
+          {filteredEquipments.map((equip) => {
               const tasksDoEquipamento = timelineTasks.filter(
                 (t) => t.equipment_recipe_id == equip.equipment_recipe_id
               );

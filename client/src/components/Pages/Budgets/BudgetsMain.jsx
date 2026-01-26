@@ -20,13 +20,14 @@ import { VerifyAuth } from "@services/AuthService.js";
 const viewLoader = (
   user_id,
   currentBudget,
+  allBudgets, // Novo parametro
   searchTerm,
   view,
   timelineTasks,
   timelineEquipments,
   timelineBudgets
 ) => {
-  if (!currentBudget) return <h1>Escolha um projeto</h1>;
+  // REMOVIDO: if (!currentBudget) return <h1>Escolha um projeto</h1>;
 
   switch (view) {
     case "equipments":
@@ -34,6 +35,7 @@ const viewLoader = (
         <BudgetEquipmentTable
           user_id={user_id}
           currentBudget={currentBudget}
+          allBudgets={allBudgets}
           searchTerm={searchTerm}
           timelineTasks={timelineTasks}
           timelineEquipments={timelineEquipments}
@@ -44,6 +46,7 @@ const viewLoader = (
         <BudgetTimeline
           user_id={user_id}
           currentBudget={currentBudget}
+          allBudgets={allBudgets}
           searchTerm={searchTerm}
           timelineTasks={timelineTasks}
           timelineEquipments={timelineEquipments}
@@ -65,7 +68,7 @@ const btnView = (view, setView, label, text) => {
   }
 };
 
-export default function BudgetsMain({ currentBudget }) {
+export default function BudgetsMain({ currentBudget, allBudgets }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [view, setView] = useState("equipments");
   const [isVisible, setVisible] = useState(false);
@@ -132,15 +135,17 @@ export default function BudgetsMain({ currentBudget }) {
 
           {/* Botões de ações */}
           <div className="flex flex-row justify-center gap-4 h-fit">
-            <button
-              className="bnt-add"
-              onClick={() => {
-                if (!currentBudget) return;
-                setVisible(true);
-              }}
-            >
-              + Novo Equipamento
-            </button>
+            {currentBudget && (
+                <button
+                className="bnt-add"
+                onClick={() => {
+                    setVisible(true);
+                }}
+                >
+                + Novo Equipamento
+                </button>
+            )}
+            
             {btnView(view, setView, "equipments", "Equipamentos")}
             {btnView(view, setView, "timeline", "Cronograma")}
             {btnView(view, setView, "accessories", "Acessórios")}
@@ -150,6 +155,7 @@ export default function BudgetsMain({ currentBudget }) {
         {viewLoader(
           userId,
           currentBudget,
+          allBudgets,
           searchTerm,
           view,
           timelineTasks,

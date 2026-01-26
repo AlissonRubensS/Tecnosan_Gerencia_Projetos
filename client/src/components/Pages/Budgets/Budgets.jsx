@@ -63,8 +63,11 @@ function Budgets() {
       header={<BudgetHeader currentBudget={selectedBudget} />}
     >
       <div className="flex flex-col gap-4">
-        <BudgetsMain currentBudget={selectedBudget} />
-        <BudgetFooter currentBudget={selectedBudget} />
+        {/* Passamos a lista completa de budgets aqui */}
+        <BudgetsMain currentBudget={selectedBudget} allBudgets={budgets} />
+        
+        {/* Footer só aparece se tiver um orçamento específico selecionado */}
+        {selectedBudget && <BudgetFooter currentBudget={selectedBudget} />}
       </div>
 
       {isAddBudgetModalOpen && (

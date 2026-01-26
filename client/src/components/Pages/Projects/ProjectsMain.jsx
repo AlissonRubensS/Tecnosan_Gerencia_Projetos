@@ -16,7 +16,7 @@ import {
 } from "@services/EquipmentRecipesService.js";
 
 const viewLoader = (currentProject, searchTerm, times, view, onRefresh) => {
-  if (!currentProject) return <h1>Escolha um projeto</h1>;
+  // REMOVIDA A VERIFICAÇÃO "if (!currentProject)" PARA PERMITIR VISÃO GLOBAL
 
   switch (view) {
     case "equipments":
@@ -61,6 +61,7 @@ export default function ProjectsMain({ times, onRefresh }) {
     try {
       await createEquipmentRecipe(recipe);
       console.log({ recipe, quantity });
+      if(onRefresh) onRefresh();
     } catch (error) {
       console.error(error);
     }
