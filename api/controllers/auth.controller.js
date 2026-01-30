@@ -75,16 +75,24 @@ export async function VerifyAuth(req, res) {
   try {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Token não fornecido" });
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.json(decoded);
+    if (!token) {
+      return res.status(401).json({ message: "Token não fornecido" });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        // Se o token expirou ou é inválido, manda 401 (Não autorizado)
+        return res.status(401).json({ message: "Token inválido ou expirado" });
+      }
+      // Retorna os dados do usuário com status 200
+      return res.status(200).json(decoded);
+    });
   } catch (error) {
-    console.error("Error: ", error);
-    res.status(500).json({ error: error.message });
+    console.error("Erro interno no VerifyAuth:", error);
+    return res.status(500).json({ error: "Falha na verificação" });
   }
 }
-
 export async function updatePassword(req, res) {
   try {
     const { user_id } = req.params;
