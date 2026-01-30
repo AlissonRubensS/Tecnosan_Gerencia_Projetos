@@ -12,7 +12,9 @@ const dbConfig = process.env.DATABASE_URL
   ? {
       // CENÁRIO 1: Produção (Render/Vercel) ou se tiver a URL no .env
       connectionString: process.env.DATABASE_URL,
-      ssl: isProduction ? { rejectUnauthorized: false } : false,
+      ssl: {
+        rejectUnauthorized: false 
+      }
     }
   : {
       // CENÁRIO 2: Localhost (Desenvolvimento)
