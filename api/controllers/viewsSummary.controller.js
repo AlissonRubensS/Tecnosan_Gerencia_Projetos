@@ -195,11 +195,6 @@ export const vwTotalsMaterialsProjecst = async (req, res) => {
 export const vwStatusEquipments = async (req, res) => {
   try {
     const response = await pool.query("SELECT * FROM vw_status_equipments;");
-
-    if (response.rowCount == 0) {
-      return res.status(404).json({ error: "Nenhum equipamento encontrado" });
-    }
-
     res.status(200).json(response.rows);
   } catch (error) {
     res.status(500).json({ error: "Erro na requisição" });
@@ -209,11 +204,6 @@ export const vwStatusEquipments = async (req, res) => {
 export const vwStatusProjects = async (req, res) => {
   try {
     const response = await pool.query("SELECT * FROM vw_status_projects;");
-
-    if (response.rowCount == 0) {
-      return res.status(404).json({ error: "Nenhum equipamento encontrado" });
-    }
-
     res.status(200).json(response.rows);
   } catch (error) {
     res.status(500).json({ error: "Erro na requisição" });
@@ -223,13 +213,6 @@ export const vwStatusProjects = async (req, res) => {
 export const getTimelineProjects = async (req, res) => {
   try {
     const response = await pool.query("SELECT * FROM vw_timeline_projects;");
-
-    if (response.rowCount == 0) {
-      return res
-        .status(404)
-        .json({ error: "Nenhum cronograma de projeto encontrado" });
-    }
-
     res.status(200).json(response.rows);
   } catch (error) {
     console.error(error); // Bom para debugar no terminal
@@ -242,13 +225,6 @@ export const getTimelineProjects = async (req, res) => {
 export const getTimelineEquipments = async (req, res) => {
   try {
     const response = await pool.query("SELECT * FROM vw_timeline_equipments;");
-
-    if (response.rowCount == 0) {
-      return res
-        .status(404)
-        .json({ error: "Nenhum cronograma de equipamento encontrado" });
-    }
-
     res.status(200).json(response.rows);
   } catch (error) {
     console.error(error);
@@ -272,13 +248,6 @@ export const getTimelineEquipmentsByBudget = async (req, res) => {
       WHERE ber.budget_id = $1`,
       [budget_id]
     );
-
-    if (response.rowCount == 0) {
-      return res
-        .status(404)
-        .json({ error: "Nenhum cronograma de equipamento encontrado" });
-    }
-
     res.status(200).json(response.rows);
   } catch (error) {
     console.error(error);
@@ -291,13 +260,6 @@ export const getTimelineEquipmentsByBudget = async (req, res) => {
 export const getTimelineTasks = async (req, res) => {
   try {
     const response = await pool.query("SELECT * FROM vw_timeline_tasks;");
-
-    if (response.rowCount == 0) {
-      return res
-        .status(404)
-        .json({ error: "Nenhuma tarefa de componente encontrada" });
-    }
-
     res.status(200).json(response.rows);
   } catch (error) {
     console.error(error);
@@ -310,11 +272,6 @@ export const vwComponentMaterialsSummary = async (req, res) => {
     const response = await pool.query(
       "SELECT * FROM vw_component_materials_summary;"
     );
-
-    if (response.rowCount == 0) {
-      res.status(404).json({ error: "Nenhum material encontrado" });
-    }
-
     res.status(200).json(response.rows);
   } catch (error) {
     console.error(error);
