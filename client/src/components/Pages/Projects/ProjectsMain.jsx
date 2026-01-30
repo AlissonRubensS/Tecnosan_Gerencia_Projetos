@@ -1,30 +1,39 @@
 // Import de funções
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 // Import de icones
 import { FaSearch } from "react-icons/fa";
 
 // Import de componentes especificos a esta página
 import ProjectEquipmentsTable from "./ProjectEquipmentsTable";
+import ProjectAccessoriesTable from "./ProjectAccessoriesTable"; // Importado
 import ProjectTimeline from "./ProjectTimeline";
 import NewEquipmentModal from "../../Ui/newEquipmentModal";
 
-import { selectedProjectContext } from "@content/SeletedProject.jsx";
 import {
   readEquipmentRecipe,
   createEquipmentRecipe,
 } from "@services/EquipmentRecipesService.js";
 
-const viewLoader = (currentProject, searchTerm, times, view, onRefresh) => {
-  // REMOVIDA A VERIFICAÇÃO "if (!currentProject)" PARA PERMITIR VISÃO GLOBAL
-
+const viewLoader = (searchTerm, times, view, onRefresh) => {
   switch (view) {
     case "equipments":
       return (
-        <ProjectEquipmentsTable searchTerm={searchTerm} times={times ?? {}} onRefresh={onRefresh}/>
+        <ProjectEquipmentsTable
+          searchTerm={searchTerm}
+          times={times ?? {}}
+          onRefresh={onRefresh}
+        />
       );
     case "timeline":
       return <ProjectTimeline searchTerm={searchTerm} times={times ?? {}} />;
+    case "accessories":
+      return (
+        <ProjectAccessoriesTable
+          searchTerm={searchTerm}
+          onRefresh={onRefresh}
+        />
+      );
     default:
       break;
   }
@@ -47,8 +56,6 @@ export default function ProjectsMain({ times, onRefresh }) {
 
   const [view, setView] = useState("equipments");
 
-  const { currentProject } = useContext(selectedProjectContext);
-
   useEffect(() => {
     const loadData = async () => {
       const recipe_data = await readEquipmentRecipe();
@@ -61,7 +68,7 @@ export default function ProjectsMain({ times, onRefresh }) {
     try {
       await createEquipmentRecipe(recipe);
       console.log({ recipe, quantity });
-      if(onRefresh) onRefresh();
+      if (onRefresh) onRefresh();
     } catch (error) {
       console.error(error);
     }
@@ -83,7 +90,7 @@ export default function ProjectsMain({ times, onRefresh }) {
             </button>
             <input
               type="text"
-              placeholder="Pesquisar equipamento"
+              placeholder="Pesquisar..."
               className="bg-transparent"
               value={searchTerm}
               onChange={(e) => {
@@ -95,19 +102,21 @@ export default function ProjectsMain({ times, onRefresh }) {
 
           {/* Botões de ações */}
           <div className="flex flex-row justify-center gap-4 h-fit">
-            <button
-              className="bnt-add"
-              onClick={() => setModalVible(!modalVisible)}
-            >
-              + Novo Equipamento
-            </button>
+            {view === "equipments" && (
+              <button
+                className="bnt-add"
+                onClick={() => setModalVible(!modalVisible)}
+              >
+                + Novo Equipamento
+              </button>
+            )}
             {btnView(view, setView, "equipments", "Equipamentos")}
             {btnView(view, setView, "timeline", "Cronograma")}
             {btnView(view, setView, "accessories", "Acessórios")}
           </div>
         </div>
 
-        {viewLoader(currentProject, searchTerm, times, view, onRefresh)}
+        {viewLoader(searchTerm, times, view, onRefresh)}
       </main>
       <NewEquipmentModal
         isVisible={modalVisible}

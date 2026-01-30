@@ -4,10 +4,12 @@ import { IoMdArrowDropdown, IoMdArrowDropup } from "react-icons/io";
 import AddMaterialModal from "./AddMaterialModal";
 import AddComponenteRecipeModal from "./AddComponentRecipeModal";
 import AddEquipmentRecipeModal from "./AddEquipmentRecipeModal";
+import AddAccessoryTypeModal from "./AddAccessoryTypeModal"; // <--- Import Novo
 
 export default function RecipeHeader({ i }) {
   const [isAddModalVisible, setAddModalVisible] = useState({
     Material: false,
+    Acessório: false, // <--- Novo Estado
     Componente: false,
     Equipamento: false,
   });
@@ -16,43 +18,39 @@ export default function RecipeHeader({ i }) {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    i.setSearch(searchText); // <-- Envia busca para o Recipes.jsx
+    i.setSearch(searchText);
+  };
+
+  const toggleModal = (key) => {
+    setAddModalVisible((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
     <React.Fragment key={i.label}>
+      {/* Modais */}
       <AddMaterialModal
         isVisible={isAddModalVisible.Material}
-        setVisible={() =>
-          setAddModalVisible((prev) => ({
-            ...prev,
-            Material: !prev.Material,
-          }))
-        }
+        setVisible={() => toggleModal("Material")}
+      />
+
+      <AddAccessoryTypeModal
+        isVisible={isAddModalVisible.Acessório}
+        setVisible={() => toggleModal("Acessório")}
       />
 
       <AddComponenteRecipeModal
         isVisible={isAddModalVisible.Componente}
-        setVisible={() =>
-          setAddModalVisible((prev) => ({
-            ...prev,
-            Componente: !prev.Componente,
-          }))
-        }
+        setVisible={() => toggleModal("Componente")}
       />
 
       <AddEquipmentRecipeModal
         isVisible={isAddModalVisible.Equipamento}
-        setVisible={() =>
-          setAddModalVisible((prev) => ({
-            ...prev,
-            Equipamento: !prev.Equipamento,
-          }))
-        }
+        setVisible={() => toggleModal("Equipamento")}
       />
 
-      <div className="card justify-between items-center overflow-auto">
-        <h1 className="text-base">{i.label}</h1>
+      {/* Header */}
+      <div className="card justify-between items-center overflow-auto mt-4">
+        <h1 className="text-base font-bold text-gray-700">{i.label}</h1>
 
         <div className="flex flex-row space-x-4">
           <form className="flex flex-row space-x-4" onSubmit={handleSearch}>
@@ -68,15 +66,7 @@ export default function RecipeHeader({ i }) {
             </button>
           </form>
 
-          <button
-            className="bnt-add w-44"
-            onClick={() =>
-              setAddModalVisible((prev) => ({
-                ...prev,
-                [i.label]: !prev[i.label],
-              }))
-            }
-          >
+          <button className="bnt-add w-44" onClick={() => toggleModal(i.label)}>
             Adicionar {i.label}
           </button>
 

@@ -3,15 +3,19 @@ import AlertModal from "../../Ui/AlertModal.jsx";
 import EditMaterialModal from "./EditMaterialModal.jsx";
 import EditComponentRecipeModal from "./EditComponentRecipeModal.jsx";
 import EditEquipmentRecipeModal from "./EditEquipmentRecipeModal.jsx";
+import EditAccessoryTypeModal from "./EditAccessoryTypeModal.jsx";
 import RenderSubTable from "./RenderSubTable.jsx";
 
 import { deleteMaterial } from "@services/MaterialService.js";
 import { deleteComponentRecipe } from "@services/ComponentRecipes.js";
 import { deleteEquipmentRecipe } from "@services/EquipmentRecipesService.js";
+// Importa a função CORRETA
+import { deleteAccessory } from "@services/AccessoriesServices.js";
 
 export default function RecipeTable({ i }) {
   const [modalDeleteVisible, setModalDeleteVisible] = useState({
     Material: false,
+    Acessório: false,
     Componente: false,
     Equipamento: false,
   });
@@ -36,7 +40,15 @@ export default function RecipeTable({ i }) {
         window.location.reload();
       },
     },
-
+    Acessório: {
+      title: "Quer excluir esse acessório?",
+      body: "Tem certeza? Isso apagará o item do estoque físico.",
+      // Função CORRETA
+      deleteFunc: async (id) => {
+        await deleteAccessory(id);
+        window.location.reload();
+      },
+    },
     Componente: {
       title: "Quer excluir esse componente?",
       body: "Tem certeza que quer excluir esse componente? A ação não é reversivel",
@@ -45,7 +57,6 @@ export default function RecipeTable({ i }) {
         window.location.reload();
       },
     },
-
     Equipamento: {
       title: "Quer excluir esse equipamento?",
       body: "Tem certeza que quer excluir esse equipamento? A ação não é reversivel",
@@ -56,6 +67,7 @@ export default function RecipeTable({ i }) {
     },
   };
 
+  // ... (RESTO DO ARQUIVO PERMANECE IGUAL, POIS É LÓGICA DE UI)
   const openEditModal = (label, row) => {
     setSelectedRow(row);
     setEditType(label);
@@ -69,6 +81,14 @@ export default function RecipeTable({ i }) {
             isVisible={true}
             setVisible={() => setEditType(null)}
             material={selectedRow}
+          />
+        );
+      case "Acessório":
+        return (
+          <EditAccessoryTypeModal
+            isVisible={true}
+            setVisible={() => setEditType(null)}
+            accessory={selectedRow}
           />
         );
       case "Componente":
@@ -92,19 +112,23 @@ export default function RecipeTable({ i }) {
     }
   };
 
-  // Helper para verificar se a linha atual está expandida
   const isRowExpanded = (row) => expandedRow?.ID === row.ID;
+  const currentModalConfig = modalLabel[i.label] || {
+    title: "",
+    body: "",
+    deleteFunc: () => {},
+  };
 
   return (
     i.isExpand === true && (
       <>
         <AlertModal
-          title={modalLabel[i.label].title}
-          body={modalLabel[i.label].body}
+          title={currentModalConfig.title}
+          body={currentModalConfig.body}
           neg_opt="Cancelar"
           pos_opt="Excluir"
-          func={() => modalLabel[i.label].deleteFunc(selectedRow.ID)}
-          isVisible={modalDeleteVisible[i.label]}
+          func={() => currentModalConfig.deleteFunc(selectedRow?.ID)}
+          isVisible={modalDeleteVisible[i.label] || false}
           setVisible={() => updateModalDeleteVisible(i.label, false)}
           style="waring"
         />
@@ -129,14 +153,11 @@ export default function RecipeTable({ i }) {
                   <th className="border-b text-center">Ações</th>
                 </tr>
               </thead>
-
               <tbody>
                 {i.list.map((row, idx) => (
                   <React.Fragment key={idx}>
                     <tr
-                      className={`border-b transition-colors ${
-                        isRowExpanded(row) ? "bg-blue-50" : "hover:bg-gray-100"
-                      }`}
+                      className={`border-b transition-colors ${isRowExpanded(row) ? "bg-blue-50" : "hover:bg-gray-100"}`}
                     >
                       {Object.values(row).map(
                         (val, colIndex) =>
@@ -146,10 +167,8 @@ export default function RecipeTable({ i }) {
                             </td>
                           ),
                       )}
-
                       <td className="py-2 px-3 flex justify-center items-center gap-2">
-                        {/* BOTÃO VISUALIZAR CORRIGIDO */}
-                        {i.label !== "Material" && (
+                        {i.label !== "Material" && i.label !== "Acessório" && (
                           <button
                             className={`p-1 rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200`}
                             onClick={() =>
@@ -159,14 +178,12 @@ export default function RecipeTable({ i }) {
                             {isRowExpanded(row) ? "Ocultar" : "Visualizar"}
                           </button>
                         )}
-
                         <button
                           className="bg-gray-100 p-1 rounded hover:bg-gray-200"
                           onClick={() => openEditModal(i.label, row)}
                         >
                           Editar
                         </button>
-
                         <button
                           className="bg-gray-100 p-1 rounded hover:bg-gray-200"
                           onClick={() => {
@@ -178,8 +195,6 @@ export default function RecipeTable({ i }) {
                         </button>
                       </td>
                     </tr>
-
-                    {/* Renderiza a sub-tabela apenas se o ID bater */}
                     <RenderSubTable row={row} expandedRow={expandedRow} i={i} />
                   </React.Fragment>
                 ))}

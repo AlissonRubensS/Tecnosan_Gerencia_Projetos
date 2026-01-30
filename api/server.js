@@ -8,6 +8,7 @@ import employeesRoutes from "./routes/employees.routes.js";
 import materialRoutes from "./routes/materiails.routes.js";
 import viewRoutes from "./routes/view.routes.js";
 import viewsSummaryRoutes from "./routes/viewsSummary.routes.js";
+import accessoriesRoutes from "./routes/accessories.routes.js";
 
 // Rotas para o que é Realmente produzido
 
@@ -38,7 +39,7 @@ app.use(
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-  })
+  }),
 );
 
 // rotas
@@ -60,6 +61,7 @@ app.use("/materials", materialRoutes);
 app.use("/views", viewRoutes);
 app.use("/vwSummary", viewsSummaryRoutes);
 app.use("/home", homeRoutes);
+app.use("/accessories", accessoriesRoutes);
 
 // Rotas para o que é Realmente produzido
 app.use("/components", componentsRoutes);
